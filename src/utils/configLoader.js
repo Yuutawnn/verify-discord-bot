@@ -1,20 +1,33 @@
 const fs = require('fs');
 const path = require('path');
 
+function findConfigPath() {
+  const candidates = [
+    path.join(process.cwd(), 'config.json'),
+    path.join(__dirname, '../config.json'),
+    path.join(__dirname, '../../config.json')
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.join(process.cwd(), 'config.json');
+}
+
 /**
  * Đọc và chuẩn hóa cấu hình từ config.json
  * Giúp người dùng có thể cấu hình cực kỳ đơn giản bằng tiếng Việt hoặc tiếng Anh.
  */
 function loadConfig() {
-  const configPath = path.join(__dirname, '../../config.json');
+  const configPath = findConfigPath();
   let raw = {};
 
   try {
-    const content = fs.readFileSync(configPath, 'utf8');
-    raw = JSON.parse(content);
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, 'utf8');
+      raw = JSON.parse(content);
+    }
   } catch (error) {
     console.error('❌ Lỗi khi đọc file config.json:', error);
-    process.exit(1);
   }
 
   // 1. Chuẩn hóa ID Role
@@ -45,7 +58,6 @@ function loadConfig() {
   // 5. Chuẩn hóa Danh sách câu hỏi
   let rawQuestions = raw.danh_sach_cau_hoi || raw.questions || raw.cau_hoi || [];
   
-  // Hỗ trợ nếu người dùng chỉ nhập 1 câu hỏi duy nhất dạng object hoặc string
   if (!Array.isArray(rawQuestions)) {
     if (typeof rawQuestions === 'object') {
       rawQuestions = [rawQuestions];
@@ -57,7 +69,6 @@ function loadConfig() {
   const questions = rawQuestions.slice(0, 5).map((q, idx) => {
     const questionText = q.cau_hoi || q.question || q.label || `Câu hỏi ${idx + 1}`;
     
-    // Xử lý đáp án (hỗ trợ cả dạng mảng ["a", "b"] hoặc chuỗi "a, b, c")
     let correctAnswers = [];
     const rawAnswers = q.dap_an ?? q.answers ?? q.correctAnswers ?? q.answer ?? '';
     if (Array.isArray(rawAnswers)) {
@@ -68,7 +79,7 @@ function loadConfig() {
 
     return {
       id: q.id || `q_${idx + 1}`,
-      label: String(questionText).slice(0, 45), // Discord giới hạn tối đa 45 ký tự cho label
+      label: String(questionText).slice(0, 45),
       placeholder: q.placeholder || q.goi_y || 'Nhập câu trả lời của bạn...',
       style: q.style || (correctAnswers.length > 0 ? 'Short' : 'Paragraph'),
       required: q.required !== false,
@@ -104,7 +115,7 @@ function loadConfig() {
  * Lấy nội dung gốc chưa chuẩn hóa của file config.json
  */
 function getRawConfig() {
-  const configPath = path.join(__dirname, '../../config.json');
+  const configPath = findConfigPath();
   try {
     const content = fs.readFileSync(configPath, 'utf8');
     return JSON.parse(content);
@@ -118,7 +129,7 @@ function getRawConfig() {
  * Ghi đè nội dung mới vào file config.json
  */
 function saveRawConfig(data) {
-  const configPath = path.join(__dirname, '../../config.json');
+  const configPath = findConfigPath();
   fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf8');
 }
 
