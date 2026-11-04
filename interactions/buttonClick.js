@@ -125,7 +125,63 @@ async function handleButtonClick(interaction, config) {
     return interaction.showModal(modal);
   }
 
-  // 3. Đảo chế độ (Tự Động <-> Admin Duyệt)
+  // 3. Mở Modal tùy chỉnh tin nhắn phản hồi thành viên
+  if (customId === 'btn_cfg_edit_reply_msg') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId('modal_edit_reply_msg')
+      .setTitle('Sửa Tin Nhắn Reply Thành Viên');
+
+    const successInput = new TextInputBuilder()
+      .setCustomId('reply_success')
+      .setLabel('Khi xác minh thành công (Tự động)'.slice(0, 45))
+      .setStyle(TextInputStyle.Paragraph)
+      .setValue((config.messages?.successAuto || '🎉 Chúc mừng bạn đã xác minh thành công!').slice(0, 500))
+      .setRequired(true);
+
+    const failedInput = new TextInputBuilder()
+      .setCustomId('reply_failed')
+      .setLabel('Khi trả lời sai đáp án (Thất bại)'.slice(0, 45))
+      .setStyle(TextInputStyle.Paragraph)
+      .setValue((config.messages?.failedAuto || '❌ Câu trả lời của bạn chưa chính xác. Vui lòng kiểm tra lại!').slice(0, 500))
+      .setRequired(true);
+
+    const reviewInput = new TextInputBuilder()
+      .setCustomId('reply_review')
+      .setLabel('Khi gửi câu trả lời chờ Admin duyệt'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.messages?.submittedReview || '📋 Câu trả lời đã được gửi tới Ban Quản Trị. Vui lòng chờ xét duyệt!').slice(0, 300))
+      .setRequired(true);
+
+    const alreadyInput = new TextInputBuilder()
+      .setCustomId('reply_already')
+      .setLabel('Khi đã xác minh trước đó rồi'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.messages?.alreadyVerified || '❌ Bạn đã được xác minh trước đó rồi!').slice(0, 200))
+      .setRequired(true);
+
+    const dmInput = new TextInputBuilder()
+      .setCustomId('reply_dm')
+      .setLabel('Tin nhắn DM khi Admin duyệt ({server})'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.messages?.approvedDirect || '🎉 Yêu cầu xác minh của bạn tại **{server}** đã được phê duyệt!').slice(0, 300))
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(successInput),
+      new ActionRowBuilder().addComponents(failedInput),
+      new ActionRowBuilder().addComponents(reviewInput),
+      new ActionRowBuilder().addComponents(alreadyInput),
+      new ActionRowBuilder().addComponents(dmInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  // 4. Đảo chế độ (Tự Động <-> Admin Duyệt)
   if (customId === 'btn_cfg_toggle_mode') {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
@@ -219,14 +275,19 @@ async function handleButtonClick(interaction, config) {
     return interaction.showModal(modal);
   }
 
-  // 5. Gửi bảng xác minh ra kênh chat
+  // 6. Gửi bảng xác minh ra kênh chat (Ưu tiên Component V2, tự động fallback về Embed truyền thống)
   if (customId === 'btn_cfg_deploy_verify') {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
     }
 
-    const { embed: verifyEmbed, row: verifyRow } = createVerifyMessage(config);
-    await interaction.channel.send({ embeds: [verifyEmbed], components: [verifyRow] });
+    const verifyMsg = createVerifyMessage(config);
+    try {
+      await interaction.channel.send(verifyMsg.v2Payload);
+    } catch (v2Err) {
+      console.warn('⚠️ Server chưa kích hoạt Components V2 từ Discord, gửi dạng Embed chuẩn:', v2Err.message);
+      await interaction.channel.send(verifyMsg.classicPayload);
+    }
 
     return interaction.reply({
       content: `✅ Đã gửi bảng xác minh ra kênh ${interaction.channel} thành công!`,
@@ -268,10 +329,10 @@ async function handleButtonClick(interaction, config) {
       }
 
       try {
-        await targetMember.send(
-          config.messages?.approvedDirect ||
-          `🎉 Yêu cầu xác minh của bạn tại **${guild.name}** đã được phê duyệt!`
-        );
+        const approvedText = (config.messages?.approvedDirect || '🎉 Yêu cầu xác minh của bạn tại **{server}** đã được phê duyệt!')
+          .replace(/\{server\}/g, guild.name)
+          .replace(/\{member\}/g, `${targetMember}`);
+        await targetMember.send(approvedText);
       } catch {}
 
       const oldEmbed = interaction.message.embeds[0];
@@ -329,10 +390,10 @@ async function handleButtonClick(interaction, config) {
 
     if (targetMember) {
       try {
-        await targetMember.send(
-          (config.messages?.rejectedDirect || '⚠️ Yêu cầu xác minh của bạn đã bị từ chối.') +
-          `\nServer: **${guild.name}**`
-        );
+        const rejectedText = (config.messages?.rejectedDirect || '❌ Yêu cầu xác minh của bạn tại **{server}** đã bị từ chối.')
+          .replace(/\{server\}/g, guild.name)
+          .replace(/\{member\}/g, `${targetMember}`);
+        await targetMember.send(rejectedText);
       } catch {}
     }
 

@@ -5,7 +5,14 @@ const {
   ButtonStyle,
   RoleSelectMenuBuilder,
   ChannelSelectMenuBuilder,
-  ChannelType
+  ChannelType,
+  ContainerBuilder,
+  SectionBuilder,
+  ThumbnailBuilder,
+  TextDisplayBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags
 } = require('discord.js');
 
 /**
@@ -21,29 +28,48 @@ function getButtonStyle(styleName) {
 }
 
 /**
- * Tạo Embed và Nút bấm cho bảng xác minh chính
+ * Tạo Bảng xác minh chính hỗ trợ Component V2 (Nút nằm TRỌN trong Embed)
+ * và Embed truyền thống (để tương thích ngược)
  * @param {object} config 
- * @returns {{ embed: EmbedBuilder, row: ActionRowBuilder }}
  */
 function createVerifyMessage(config) {
-  const embed = new EmbedBuilder()
-    .setTitle(config.embed?.title || '🛡️ XÁC MINH THÀNH VIÊN')
-    .setDescription(config.embed?.description || 'Nhấn nút bên dưới để xác minh.')
-    .setColor(config.embed?.color || '#2B2D31'); // Mặc định: Màu tối tiệp nền Discord
+  const title = config.embed?.title || '🛡️ CỔNG XÁC MINH THÀNH VIÊN';
+  const desc = config.embed?.description || 'Nhấn nút bên dưới để xác minh.';
+  const colorHex = config.embed?.color || '#2B2D31';
+
+  // 1. Tạo Container Component V2 (cho nút nằm ngay trong khung Embed)
+  const container = new ContainerBuilder();
+  const hexClean = colorHex.replace('#', '');
+  const colorInt = parseInt(hexClean, 16);
+  if (!isNaN(colorInt)) {
+    container.setAccentColor(colorInt);
+  }
+
+  const mainContent = `## ${title}\n\n${desc}`;
+
+  // Logo nhỏ góc phải
+  if (config.embed?.thumbnail) {
+    const section = new SectionBuilder()
+      .setThumbnailAccessory(new ThumbnailBuilder().setURL(config.embed.thumbnail))
+      .addTextDisplayComponents(new TextDisplayBuilder().setContent(mainContent));
+    container.addSectionComponents(section);
+  } else {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(mainContent));
+  }
 
   // Ảnh Banner lớn ở giữa
   if (config.embed?.image) {
-    embed.setImage(config.embed.image);
+    const media = new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL(config.embed.image)
+    );
+    container.addMediaGalleryComponents(media);
   }
 
-  // Ảnh nhỏ Logo góc phải
-  if (config.embed?.thumbnail) {
-    embed.setThumbnail(config.embed.thumbnail);
-  }
-
-  // Chân trang (chỉ hiện khi người dùng tự cấu hình, không còn chữ mặc định)
+  // Chân trang (Footer)
   if (config.embed?.footer) {
-    embed.setFooter({ text: config.embed.footer });
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`-# ${config.embed.footer}`)
+    );
   }
 
   // Nút bấm: Mặc định xám (không màu), có thể tùy chỉnh
@@ -58,7 +84,38 @@ function createVerifyMessage(config) {
 
   const row = new ActionRowBuilder().addComponents(button);
 
-  return { embed, row };
+  // Đưa nút vào TRONG Container của Component V2
+  container.addActionRowComponents(row);
+
+  // 2. Tạo Embed truyền thống (để tương thích ngược khi Discord guild chưa mở V2)
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(desc)
+    .setColor(colorHex);
+
+  if (config.embed?.image) {
+    embed.setImage(config.embed.image);
+  }
+  if (config.embed?.thumbnail) {
+    embed.setThumbnail(config.embed.thumbnail);
+  }
+  if (config.embed?.footer) {
+    embed.setFooter({ text: config.embed.footer });
+  }
+
+  return {
+    container,
+    embed,
+    row,
+    v2Payload: {
+      components: [container],
+      flags: MessageFlags.IsComponentsV2
+    },
+    classicPayload: {
+      embeds: [embed],
+      components: [row]
+    }
+  };
 }
 
 /**
@@ -167,8 +224,13 @@ function createDashboard(guild, config) {
       { name: '🛡️ Chế độ xác minh', value: modeDisplay, inline: true },
       { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: false },
       {
-        name: '📝 Nội dung bảng xác minh',
+        name: '📝 Nội dung bảng xác minh (Component V2)',
         value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Kiểu nút:** ${btnColorText}\n**Chữ nút:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Xác minh'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}\n**Chân trang:** ${config.embed?.footer || '*Không có*'}`,
+        inline: false
+      },
+      {
+        name: '💬 Tin nhắn phản hồi thành viên',
+        value: `**Thành công:** ${config.messages?.successAuto ? config.messages.successAuto.slice(0, 50) + '...' : '*Mặc định*'}\n**Thất bại:** ${config.messages?.failedAuto ? config.messages.failedAuto.slice(0, 50) + '...' : '*Mặc định*'}\n**Chờ duyệt:** ${config.messages?.submittedReview ? config.messages.submittedReview.slice(0, 50) + '...' : '*Mặc định*'}`,
         inline: false
       }
     );
@@ -220,13 +282,32 @@ function createDashboard(guild, config) {
     .setMaxValues(1);
   const rowChannel = new ActionRowBuilder().addComponents(channelSelect);
 
-  // Row 4: Các nút chức năng (Tối đa 5 nút)
+  // Row 4: Các nút chỉnh sửa nội dung, câu hỏi & tin nhắn phản hồi
   const btnEditContent = new ButtonBuilder()
     .setCustomId('btn_cfg_edit_content')
-    .setLabel('Nội Dung & Ảnh')
+    .setLabel('Nội Dung & Banner')
     .setStyle(ButtonStyle.Primary)
     .setEmoji('📝');
 
+  const btnEditReplyMsg = new ButtonBuilder()
+    .setCustomId('btn_cfg_edit_reply_msg')
+    .setLabel('Tin Nhắn Reply')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('💬');
+
+  const btnEditQuestions = new ButtonBuilder()
+    .setCustomId('btn_cfg_edit_questions')
+    .setLabel('Câu Hỏi')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('❓');
+
+  const rowButtons1 = new ActionRowBuilder().addComponents(
+    btnEditContent,
+    btnEditReplyMsg,
+    btnEditQuestions
+  );
+
+  // Row 5: Đổi chế độ, màu nút và gửi bảng xác minh
   const btnToggleMode = new ButtonBuilder()
     .setCustomId('btn_cfg_toggle_mode')
     .setLabel(`Chế Độ (${config.mode === 'AUTO' ? 'Tự Động' : 'Duyệt'})`)
@@ -239,27 +320,19 @@ function createDashboard(guild, config) {
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('🎨');
 
-  const btnEditQuestions = new ButtonBuilder()
-    .setCustomId('btn_cfg_edit_questions')
-    .setLabel('Câu Hỏi')
-    .setStyle(ButtonStyle.Primary)
-    .setEmoji('❓');
-
   const btnDeploy = new ButtonBuilder()
     .setCustomId('btn_cfg_deploy_verify')
     .setLabel('Gửi Bảng Verify')
     .setStyle(ButtonStyle.Success)
     .setEmoji('🚀');
 
-  const rowButtons = new ActionRowBuilder().addComponents(
-    btnEditContent,
+  const rowButtons2 = new ActionRowBuilder().addComponents(
     btnToggleMode,
     btnToggleColor,
-    btnEditQuestions,
     btnDeploy
   );
 
-  return { embed, components: [rowRole, rowRemoveRole, rowChannel, rowButtons] };
+  return { embed, components: [rowRole, rowRemoveRole, rowChannel, rowButtons1, rowButtons2] };
 }
 
 module.exports = {

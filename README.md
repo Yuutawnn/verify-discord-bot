@@ -8,14 +8,15 @@ Bot Discord chuyên dụng hỗ trợ xác minh thành viên mới thông qua h�
 
 ## 🌟 Tính Năng Nổi Bật
 
-- **Giao diện Modal Popup hiện đại:** Không spam tin nhắn trong kênh; người dùng bấm nút sẽ hiện bảng nhập câu hỏi popup native trên app Discord (cả điện thoại lẫn máy tính).
-- **Cấu hình siêu đơn giản:** File `config.json` chỉ gồm 3 mục cơ bản bằng tiếng Việt, hỗ trợ tự động nhận dạng đáp án qua dấu phẩy.
-- **Tự động cập nhật không cần khởi động lại:** Khi bạn sửa câu hỏi hoặc đáp án trong `config.json`, bot sẽ áp dụng ngay lập tức mà không cần tắt đi bật lại!
-- **Quản lý trực tiếp trên Discord bằng Slash Command:** Các Admin khác có thể dùng `/config-verify` để xem, đổi Role, đổi chế độ và chỉnh sửa câu hỏi mà không cần chạm vào file code hay server!
+- **Bảng xác minh Component V2 hiện đại:** Nút xác minh nằm trọn bên trong khung Embed/Container, giao diện sạch đẹp, không viền thừa, hỗ trợ Logo nhỏ góc phải, Banner lớn và chân trang.
+- **Tùy chỉnh toàn bộ tin nhắn phản hồi (Reply Messages):** Dễ dàng thay đổi tin nhắn khi member làm đúng, làm sai, chờ duyệt, hoặc tin nhắn DM riêng.
+- **Giao diện Modal Popup tiện lợi:** Người dùng bấm nút sẽ hiện bảng nhập câu hỏi popup native trên app Discord (cả điện thoại lẫn máy tính).
+- **Cấu hình siêu đơn giản:** File `config.json` gồm các mục cơ bản bằng tiếng Việt, hỗ trợ tự động nhận dạng đáp án qua dấu phẩy.
+- **Bảng điều khiển tương tác (Component Dashboard):** Dùng `/config-verify bang-dieu-khien` để chọn Role cấp, Role gỡ, Kênh duyệt, đổi màu nút, sửa nội dung và sửa câu hỏi trực quan 100%!
 - **Hỗ trợ 2 chế độ linh hoạt:**
   - `TU_DONG`: Tự động so sánh câu trả lời với từ khóa quy định. Đúng $\rightarrow$ Tự cấp Role ngay.
   - `ADMIN_DUYET`: Chuyển phiếu câu trả lời vào kênh kín của Admin kèm nút bấm `[Phê duyệt]` và `[Từ chối]`.
-- **Cấp và gỡ Role tự động:** Tự động trao role thành viên và gỡ role khách (nếu có).
+- **Cấp Role thành viên và Gỡ Role Unverify tự động.**
 
 ---
 

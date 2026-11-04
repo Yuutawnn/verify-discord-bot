@@ -29,8 +29,14 @@ module.exports = {
     }
 
     try {
-      const { embed, row } = createVerifyMessage(config);
-      await targetChannel.send({ embeds: [embed], components: [row] });
+      const verifyMsg = createVerifyMessage(config);
+      try {
+        // Ưu tiên gửi dạng Component V2 (nút nằm trọn trong embed container)
+        await targetChannel.send(verifyMsg.v2Payload);
+      } catch (v2Error) {
+        console.warn('⚠️ Server chưa kích hoạt Components V2 từ Discord, tự động gửi dạng Embed chuẩn:', v2Error.message);
+        await targetChannel.send(verifyMsg.classicPayload);
+      }
 
       return interaction.reply({
         content: `✅ Đã gửi bảng xác minh thành công vào kênh ${targetChannel}!`,

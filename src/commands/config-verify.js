@@ -34,7 +34,13 @@ module.exports = {
         .setName('sua-noi-dung')
         .setDescription('Mở hộp thoại chỉnh sửa trực quan (Nhấn phím Enter xuống dòng, thêm link ảnh)')
     )
-    // 4. Đặt Role xác minh
+    // 4. Mở Popup Modal để sửa tin nhắn phản hồi thành viên
+    .addSubcommand(sub =>
+      sub
+        .setName('sua-tin-nhan')
+        .setDescription('Mở hộp thoại tùy chỉnh tin nhắn phản hồi cho thành viên khi xác minh')
+    )
+    // 5. Đặt Role xác minh
     .addSubcommand(sub =>
       sub
         .setName('role')
@@ -261,6 +267,59 @@ module.exports = {
         new ActionRowBuilder().addComponents(imageInput),
         new ActionRowBuilder().addComponents(thumbInput),
         new ActionRowBuilder().addComponents(footerInput)
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // --- LỆNH MỞ POPUP SỬA TIN NHẮN PHẢN HỒI ---
+    if (sub === 'sua-tin-nhan') {
+      const current = loadConfig();
+      const modal = new ModalBuilder()
+        .setCustomId('modal_edit_reply_msg')
+        .setTitle('Sửa Tin Nhắn Reply Thành Viên');
+
+      const successInput = new TextInputBuilder()
+        .setCustomId('reply_success')
+        .setLabel('Khi xác minh thành công (Tự động)'.slice(0, 45))
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue((current.messages?.successAuto || '🎉 Chúc mừng bạn đã xác minh thành công!').slice(0, 500))
+        .setRequired(true);
+
+      const failedInput = new TextInputBuilder()
+        .setCustomId('reply_failed')
+        .setLabel('Khi trả lời sai đáp án (Thất bại)'.slice(0, 45))
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue((current.messages?.failedAuto || '❌ Câu trả lời của bạn chưa chính xác. Vui lòng kiểm tra lại!').slice(0, 500))
+        .setRequired(true);
+
+      const reviewInput = new TextInputBuilder()
+        .setCustomId('reply_review')
+        .setLabel('Khi gửi câu trả lời chờ Admin duyệt'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.messages?.submittedReview || '📋 Câu trả lời đã được gửi tới Ban Quản Trị. Vui lòng chờ xét duyệt!').slice(0, 300))
+        .setRequired(true);
+
+      const alreadyInput = new TextInputBuilder()
+        .setCustomId('reply_already')
+        .setLabel('Khi đã xác minh trước đó rồi'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.messages?.alreadyVerified || '❌ Bạn đã được xác minh trước đó rồi!').slice(0, 200))
+        .setRequired(true);
+
+      const dmInput = new TextInputBuilder()
+        .setCustomId('reply_dm')
+        .setLabel('Tin nhắn DM khi Admin duyệt ({server})'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.messages?.approvedDirect || '🎉 Yêu cầu xác minh của bạn tại **{server}** đã được phê duyệt!').slice(0, 300))
+        .setRequired(false);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(successInput),
+        new ActionRowBuilder().addComponents(failedInput),
+        new ActionRowBuilder().addComponents(reviewInput),
+        new ActionRowBuilder().addComponents(alreadyInput),
+        new ActionRowBuilder().addComponents(dmInput)
       );
 
       return interaction.showModal(modal);

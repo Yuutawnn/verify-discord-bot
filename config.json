@@ -19,5 +19,11 @@
       "dap_an": "dong y, đồng ý, pass123"
     }
   ],
-  "kenh_admin_duyet": ""
+  "kenh_admin_duyet": "",
+  "tin_nhan_phan_hoi": {
+    "thanh_cong": "🎉 Chúc mừng bạn đã xác minh thành công và được cấp role!",
+    "that_bai": "❌ Câu trả lời của bạn chưa chính xác. Vui lòng kiểm tra lại!",
+    "cho_duyet": "📋 Câu trả lời của bạn đã được gửi tới Ban Quản Trị. Vui lòng chờ xét duyệt!",
+    "da_xac_minh": "❌ Bạn đã được xác minh trước đó rồi!"
+  }
 }

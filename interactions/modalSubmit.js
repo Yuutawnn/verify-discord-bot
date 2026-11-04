@@ -75,7 +75,46 @@ async function handleModalSubmit(interaction, config) {
     });
   }
 
-  // 3. Xử lý khi thành viên nộp câu hỏi xác minh
+  // 3. Xử lý khi Admin lưu cài đặt tin nhắn phản hồi thành viên
+  if (customId === 'modal_edit_reply_msg') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: '❌ Chỉ có Administrator mới có quyền chỉnh sửa cài đặt!',
+        ephemeral: true
+      });
+    }
+
+    const raw = getRawConfig();
+    if (!raw.tin_nhan_phan_hoi || typeof raw.tin_nhan_phan_hoi !== 'object') {
+      raw.tin_nhan_phan_hoi = {};
+    }
+
+    const success = getFieldValue(interaction, 'reply_success');
+    const failed = getFieldValue(interaction, 'reply_failed');
+    const review = getFieldValue(interaction, 'reply_review');
+    const already = getFieldValue(interaction, 'reply_already');
+    const dm = getFieldValue(interaction, 'reply_dm');
+
+    if (success !== null) raw.tin_nhan_phan_hoi.thanh_cong = success;
+    if (failed !== null) raw.tin_nhan_phan_hoi.that_bai = failed;
+    if (review !== null) raw.tin_nhan_phan_hoi.cho_duyet = review;
+    if (already !== null) raw.tin_nhan_phan_hoi.da_xac_minh = already;
+    if (dm !== null) raw.tin_nhan_phan_hoi.admin_duyet_dm = dm;
+
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(interaction.guild, newConfig);
+
+    return interaction.reply({
+      content: '✅ **Đã cập nhật toàn bộ tin nhắn phản hồi thành viên thành công!**',
+      embeds: [embed],
+      components,
+      ephemeral: true
+    });
+  }
+
+  // 4. Xử lý khi thành viên nộp câu hỏi xác minh
   if (interaction.customId !== 'modal_verify') return;
 
   const { member, guild } = interaction;

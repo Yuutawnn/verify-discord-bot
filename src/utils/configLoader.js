@@ -101,14 +101,15 @@ function loadConfig() {
     };
   });
 
-  // 6. Tin nhắn phản hồi
+  // 6. Tin nhắn phản hồi thành viên (hỗ trợ cả tiếng Việt và tiếng Anh)
+  const rawMsg = raw.tin_nhan_phan_hoi || raw.tin_nhan_reply || raw.messages || {};
   const messages = {
-    alreadyVerified: raw.messages?.alreadyVerified || raw.thong_bao_da_verify || '❌ Bạn đã được xác minh trước đó rồi!',
-    successAuto: raw.messages?.successAuto || raw.thong_bao_thanh_cong || '🎉 Chúc mừng bạn đã trả lời chính xác và được cấp quyền thành viên!',
-    failedAuto: raw.messages?.failedAuto || raw.thong_bao_that_bai || '❌ Câu trả lời của bạn chưa chính xác. Vui lòng đọc lại nội quy và thử lại!',
-    submittedReview: raw.messages?.submittedReview || '📋 Câu trả lời của bạn đã được gửi tới Ban Quản Trị. Vui lòng chờ xét duyệt!',
-    approvedDirect: raw.messages?.approvedDirect || '🎉 Yêu cầu xác minh của bạn đã được Admin phê duyệt thành công!',
-    rejectedDirect: raw.messages?.rejectedDirect || '⚠️ Yêu cầu xác minh của bạn đã bị từ chối.'
+    alreadyVerified: rawMsg.da_xac_minh || rawMsg.alreadyVerified || raw.thong_bao_da_verify || '❌ Bạn đã được xác minh trước đó rồi!',
+    successAuto: rawMsg.thanh_cong || rawMsg.successAuto || raw.thong_bao_thanh_cong || '🎉 Chúc mừng bạn đã xác minh thành công và được cấp role!',
+    failedAuto: rawMsg.that_bai || rawMsg.failedAuto || raw.thong_bao_that_bai || '❌ Câu trả lời của bạn chưa chính xác. Vui lòng kiểm tra lại!',
+    submittedReview: rawMsg.cho_duyet || rawMsg.submittedReview || raw.thong_bao_cho_duyet || '📋 Câu trả lời của bạn đã được gửi tới Ban Quản Trị. Vui lòng chờ xét duyệt!',
+    approvedDirect: rawMsg.admin_duyet_dm || rawMsg.approvedDirect || '🎉 Yêu cầu xác minh của bạn tại **{server}** đã được phê duyệt!',
+    rejectedDirect: rawMsg.admin_tu_choi_dm || rawMsg.rejectedDirect || '❌ Yêu cầu xác minh của bạn tại **{server}** đã bị từ chối.'
   };
 
   return {

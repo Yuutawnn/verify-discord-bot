@@ -35,10 +35,11 @@ Mở file **`config.json`** trong thư mục. Bạn sẽ thấy giao diện cự
 3. **`che_do`**:
    - `"TU_DONG"`: Người dùng gõ đúng từ khóa trong `dap_an` $\rightarrow$ Bot tự cấp role ngay lập tức!
    - `"ADMIN_DUYET"`: Người dùng gửi câu trả lời $\rightarrow$ Bot gửi phiếu vào kênh của Admin để bạn bấm nút `[Duyệt]` hoặc `[Từ chối]`.
-3. **`danh_sach_cau_hoi`**:
+4. **`danh_sach_cau_hoi`**:
    - `"cau_hoi"`: Tiêu đề câu hỏi muốn hỏi.
    - `"dap_an"`: Các từ khóa đúng (viết hoa/thường đều được, cách nhau bằng dấu phẩy `,`). **Nếu câu hỏi dạng khảo sát không cần chấm điểm, chỉ cần để trống: `""`**.
-4. **`kenh_admin_duyet`**: Dán ID kênh riêng của Admin (chỉ cần điền nếu bạn chọn chế độ `"ADMIN_DUYET"`).
+5. **`kenh_admin_duyet`**: Dán ID kênh riêng của Admin (chỉ cần điền nếu bạn chọn chế độ `"ADMIN_DUYET"`).
+6. **`tin_nhan_phan_hoi`**: Tùy chỉnh câu chữ Bot phản hồi cho member (thành công, thất bại, chờ duyệt, DM riêng). Bạn cũng có thể bấm nút **[💬 Tin Nhắn Reply]** trên Dashboard để sửa trực tiếp!
 
 ---
 
