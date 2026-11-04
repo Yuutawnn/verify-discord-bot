@@ -38,12 +38,18 @@ module.exports = {
     .addSubcommand(sub =>
       sub
         .setName('role')
-        .setDescription('Đặt Role sẽ cấp cho thành viên sau khi xác minh thành công')
+        .setDescription('Cài đặt Role sẽ cấp và Role sẽ gỡ (Unverify) khi xác minh')
         .addRoleOption(opt =>
           opt
             .setName('vai-tro')
-            .setDescription('Chọn Role thành viên cần cấp')
-            .setRequired(true)
+            .setDescription('Chọn Role thành viên cần cấp khi xác minh')
+            .setRequired(false)
+        )
+        .addRoleOption(opt =>
+          opt
+            .setName('role-unverify')
+            .setDescription('Chọn Role cần GỠ khi xác minh (Role chưa xác minh / Unverified)')
+            .setRequired(false)
         )
     )
     // 5. Đổi chế độ xác minh
@@ -262,21 +268,39 @@ module.exports = {
 
     // --- 3. LỆNH ĐẶT ROLE ---
     if (sub === 'role') {
-      const selectedRole = interaction.options.getRole('vai-tro');
+      const giveRole = interaction.options.getRole('vai-tro');
+      const removeRole = interaction.options.getRole('role-unverify');
 
-      const botMember = interaction.guild.members.me;
-      if (botMember.roles.highest.position <= selectedRole.position) {
+      if (!giveRole && !removeRole) {
         return interaction.reply({
-          content: `⚠️ Cảnh báo: Role ${selectedRole} đang nằm **CAO HƠN hoặc BẰNG** Role của Bot!\n👉 Vui lòng vào *Server Settings -> Roles* và kéo Role của Bot lên trên ${selectedRole} để bot có quyền cấp role này.`,
+          content: '❌ Bạn cần chọn ít nhất một role (`vai-tro` để cấp hoặc `role-unverify` để gỡ)!',
           ephemeral: true
         });
       }
 
-      raw.role_id = selectedRole.id;
+      const botMember = interaction.guild.members.me;
+      const responseLines = [];
+
+      if (giveRole) {
+        if (botMember && botMember.roles.highest.position <= giveRole.position) {
+          responseLines.push(`⚠️ **Lưu ý:** Role cấp ${giveRole} đang cao hơn hoặc bằng Role của Bot. Hãy vào *Server Settings -> Roles* kéo Role của Bot lên trên!`);
+        }
+        raw.role_id = giveRole.id;
+        responseLines.push(`✅ **Đã lưu Role cấp:** ${giveRole}`);
+      }
+
+      if (removeRole) {
+        if (botMember && botMember.roles.highest.position <= removeRole.position) {
+          responseLines.push(`⚠️ **Lưu ý:** Role gỡ ${removeRole} đang cao hơn hoặc bằng Role của Bot. Hãy vào *Server Settings -> Roles* kéo Role của Bot lên trên để bot có quyền gỡ!`);
+        }
+        raw.role_unverify = removeRole.id;
+        responseLines.push(`✅ **Đã lưu Role gỡ (Unverify):** ${removeRole}`);
+      }
+
       saveRawConfig(raw);
 
       return interaction.reply({
-        content: `✅ Đã lưu thành công! Thành viên sau khi xác minh sẽ được cấp Role: ${selectedRole}`,
+        content: responseLines.join('\n'),
         ephemeral: true
       });
     }

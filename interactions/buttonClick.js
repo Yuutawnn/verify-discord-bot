@@ -263,8 +263,8 @@ async function handleButtonClick(interaction, config) {
       if (config.verifiedRoleId) {
         await targetMember.roles.add(config.verifiedRoleId);
       }
-      if (config.removeRoleId && targetMember.roles.cache.has(config.removeRoleId)) {
-        await targetMember.roles.remove(config.removeRoleId);
+      if (config.removeRoleId) {
+        await targetMember.roles.remove(config.removeRoleId).catch(() => {});
       }
 
       try {

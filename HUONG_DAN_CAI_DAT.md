@@ -31,7 +31,8 @@ Mở file **`config.json`** trong thư mục. Bạn sẽ thấy giao diện cự
 
 ### Giải thích từng dòng:
 1. **`role_id`**: Dán ID của Role mà bạn muốn cấp cho thành viên sau khi họ xác minh thành công.
-2. **`che_do`**:
+2. **`role_unverify`**: Dán ID của Role tạm thời (Chưa xác minh / Unverified) muốn Bot tự động **GỠ BỎ** khi thành viên xác minh xong (Bỏ trống `""` nếu không dùng).
+3. **`che_do`**:
    - `"TU_DONG"`: Người dùng gõ đúng từ khóa trong `dap_an` $\rightarrow$ Bot tự cấp role ngay lập tức!
    - `"ADMIN_DUYET"`: Người dùng gửi câu trả lời $\rightarrow$ Bot gửi phiếu vào kênh của Admin để bạn bấm nút `[Duyệt]` hoặc `[Từ chối]`.
 3. **`danh_sach_cau_hoi`**:

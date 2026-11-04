@@ -43,7 +43,32 @@ async function handleSelectMenu(interaction, config) {
     return;
   }
 
-  // 2. Chọn Kênh Admin duyệt
+  // 2. Chọn Role Unverify (gỡ khi xác minh thành công)
+  if (customId === 'select_cfg_remove_role') {
+    const selectedRoleId = values[0];
+    const selectedRole = guild.roles.cache.get(selectedRoleId);
+
+    // Kiểm tra phân quyền thứ tự role
+    const botMember = guild.members.me;
+    let warningMsg = '';
+    if (selectedRole && botMember && botMember.roles.highest.position <= selectedRole.position) {
+      warningMsg = `\n⚠️ **Lưu ý:** Role ${selectedRole} đang cao hơn hoặc bằng Role của Bot. Hãy vào *Server Settings -> Roles* kéo Role của Bot lên trên để Bot có quyền gỡ role này!`;
+    }
+
+    raw.role_unverify = selectedRoleId;
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(guild, newConfig);
+
+    await interaction.update({ embeds: [embed], components });
+    if (warningMsg) {
+      await interaction.followUp({ content: warningMsg, ephemeral: true }).catch(() => {});
+    }
+    return;
+  }
+
+  // 3. Chọn Kênh Admin duyệt
   if (customId === 'select_cfg_channel') {
     const selectedChannelId = values[0];
     raw.kenh_admin_duyet = selectedChannelId;

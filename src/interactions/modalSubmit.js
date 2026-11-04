@@ -131,8 +131,8 @@ async function handleModalSubmit(interaction, config) {
       if (config.verifiedRoleId) {
         await member.roles.add(config.verifiedRoleId);
       }
-      if (config.removeRoleId && member.roles.cache.has(config.removeRoleId)) {
-        await member.roles.remove(config.removeRoleId);
+      if (config.removeRoleId) {
+        await member.roles.remove(config.removeRoleId).catch(() => {});
       }
 
       if (config.logChannelId) {

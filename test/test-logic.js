@@ -10,6 +10,7 @@ const config = loadConfig();
 assert(config.mode === 'AUTO' || config.mode === 'MANUAL_REVIEW', 'Chế độ phải được chuẩn hóa về AUTO hoặc MANUAL_REVIEW');
 assert(Array.isArray(config.questions), 'questions phải là một mảng');
 assert(config.questions.length > 0 && config.questions.length <= 5, 'Số lượng câu hỏi phải từ 1 đến 5');
+assert('removeRoleId' in config, 'config phải hỗ trợ trường removeRoleId (role_unverify)');
 console.log('✅ loadConfig() chuẩn hóa cấu hình thành công!');
 
 // 2. Kiểm tra hàm tạo Embed xác minh

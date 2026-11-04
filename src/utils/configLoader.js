@@ -32,7 +32,7 @@ function loadConfig() {
 
   // 1. Chuẩn hóa ID Role
   const verifiedRoleId = raw.role_id || raw.verifiedRoleId || raw.ROLE_ID || '';
-  const removeRoleId = raw.removeRoleId || raw.remove_role_id || '';
+  const removeRoleId = raw.role_unverify || raw.role_chua_verify || raw.role_unverified || raw.removeRoleId || raw.remove_role_id || '';
 
   // 2. Chuẩn hóa Chế độ (Tự động hoặc Admin duyệt)
   let mode = 'AUTO';

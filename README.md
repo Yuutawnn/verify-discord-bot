@@ -52,7 +52,7 @@ Bạn chỉ cần chỉnh sửa file [`config.json`](file:///c:/Users/nguye/Down
 ```json
 {
   "role_id": "DÁN_ID_ROLE_THÀNH_VIÊN_VÀO_ĐÂY",
-
+  "role_unverify": "DÁN_ID_ROLE_UNVERIFY_VÀO_ĐÂY_HOẶC_ĐỂ_TRỐNG",
   "che_do": "TU_DONG",
 
   "danh_sach_cau_hoi": [

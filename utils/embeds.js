@@ -137,7 +137,11 @@ function createLogEmbed({ member, action, moderator, reason, color }) {
 function createDashboard(guild, config) {
   const roleDisplay = config.verifiedRoleId
     ? `<@&${config.verifiedRoleId}>`
-    : '⚠️ *Chưa chọn (Dùng menu chọn Role bên dưới)*';
+    : '⚠️ *Chưa chọn*';
+
+  const removeRoleDisplay = config.removeRoleId
+    ? `<@&${config.removeRoleId}>`
+    : '*Không gỡ role nào*';
 
   const modeDisplay = config.mode === 'AUTO'
     ? '🤖 **Tự động (AUTO)**'
@@ -158,9 +162,10 @@ function createDashboard(guild, config) {
     .setDescription('Chọn các menu hoặc nút bấm bên dưới để tùy chỉnh toàn bộ hệ thống xác minh trực tiếp bằng giao diện tương tác.')
     .setColor(config.embed?.color || '#2B2D31')
     .addFields(
-      { name: '🎭 Role thành viên sẽ cấp', value: roleDisplay, inline: true },
+      { name: '🎭 Role sẽ cấp', value: roleDisplay, inline: true },
+      { name: '🚫 Role sẽ gỡ (Unverify)', value: removeRoleDisplay, inline: true },
       { name: '🛡️ Chế độ xác minh', value: modeDisplay, inline: true },
-      { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true },
+      { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: false },
       {
         name: '📝 Nội dung bảng xác minh',
         value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Kiểu nút:** ${btnColorText}\n**Chữ nút:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Xác minh'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}\n**Chân trang:** ${config.embed?.footer || '*Không có*'}`,
@@ -190,7 +195,7 @@ function createDashboard(guild, config) {
   embed.setFooter({ text: 'Mọi thay đổi sẽ được lưu tự động ngay khi bạn thao tác' });
   embed.setTimestamp();
 
-  // Row 1: Chọn Role bằng Dropdown native của Discord
+  // Row 1: Chọn Role sẽ cấp bằng Dropdown native của Discord
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId('select_cfg_role')
     .setPlaceholder('🎭 Chọn Role sẽ cấp cho thành viên...')
@@ -198,7 +203,15 @@ function createDashboard(guild, config) {
     .setMaxValues(1);
   const rowRole = new ActionRowBuilder().addComponents(roleSelect);
 
-  // Row 2: Chọn Kênh duyệt bằng Dropdown native của Discord
+  // Row 2: Chọn Role Unverify sẽ gỡ
+  const removeRoleSelect = new RoleSelectMenuBuilder()
+    .setCustomId('select_cfg_remove_role')
+    .setPlaceholder('🚫 Chọn Role sẽ GỠ khi xác minh (Unverified Role)...')
+    .setMinValues(1)
+    .setMaxValues(1);
+  const rowRemoveRole = new ActionRowBuilder().addComponents(removeRoleSelect);
+
+  // Row 3: Chọn Kênh duyệt bằng Dropdown native của Discord
   const channelSelect = new ChannelSelectMenuBuilder()
     .setCustomId('select_cfg_channel')
     .setPlaceholder('📋 Chọn Kênh nhận phiếu duyệt cho Admin...')
@@ -207,7 +220,7 @@ function createDashboard(guild, config) {
     .setMaxValues(1);
   const rowChannel = new ActionRowBuilder().addComponents(channelSelect);
 
-  // Row 3: Các nút chức năng (Tối đa 5 nút)
+  // Row 4: Các nút chức năng (Tối đa 5 nút)
   const btnEditContent = new ButtonBuilder()
     .setCustomId('btn_cfg_edit_content')
     .setLabel('Nội Dung & Ảnh')
@@ -246,7 +259,7 @@ function createDashboard(guild, config) {
     btnDeploy
   );
 
-  return { embed, components: [rowRole, rowChannel, rowButtons] };
+  return { embed, components: [rowRole, rowRemoveRole, rowChannel, rowButtons] };
 }
 
 module.exports = {
