@@ -85,22 +85,20 @@ Mặc định Discord ẩn các dãy số ID, bạn chỉ cần bật lên 1 l�
 
 ---
 
-## 🛠️ Phần 5: Quản Lý Cấu Hình Trực Tiếp Trên Discord (`/config-verify`)
+## 🛠️ Phần 5: Bảng Điều Khiển Tương Tác Component v2 (`/config-verify`)
 
-Nếu các Admin khác **không có quyền truy cập vào VPS / máy tính chạy bot**, họ có thể cài đặt và chỉnh sửa mọi thứ **trực tiếp ngay trong Discord** bằng bộ lệnh Slash:
+Giờ đây bạn không cần nhớ cú pháp lệnh hay copy dãy số ID phức tạp nữa. Chỉ cần gõ:
+```text
+/config-verify bang-dieu-khien
+```
+*(Hoặc gõ `/config-verify xem`)* $\rightarrow$ Bot sẽ gửi một **Bảng điều khiển tương tác (Component Dashboard)** gồm đầy đủ Dropdown và Nút bấm:
 
-| Lệnh | Chức năng | Ví dụ sử dụng |
-| :--- | :--- | :--- |
-| `/config-verify xem` | Xem toàn bộ cấu hình hiện tại (Role, chế độ, danh sách câu hỏi) | `/config-verify xem` |
-| `/config-verify role` | Đổi Role sẽ cấp sau khi verify | `/config-verify role vai-tro:@Member` |
-| `/config-verify sua-noi-dung` | **(Khuyên dùng)** Mở popup trực quan: Nhấn phím Enter xuống dòng, dán link ảnh | `/config-verify sua-noi-dung` |
-| `/config-verify noi-dung` | Chỉnh nhanh tiêu đề, mô tả, ảnh banner, màu sắc | `/config-verify noi-dung anh-banner:https://...` |
-| `/config-verify che-do` | Đổi qua lại giữa Tự động và Admin duyệt | `/config-verify che-do loai:TU_DONG` |
-| `/config-verify kenh-duyet` | Đổi kênh nhận phiếu duyệt xác minh | `/config-verify kenh-duyet kenh:#duyet-thanh-vien` |
-| `/config-verify dat-cau-hoi` | Thêm hoặc sửa câu hỏi từ 1 đến 5 | `/config-verify dat-cau-hoi so-thu-tu:1 cau-hoi:Mật khẩu là gì? dap-an:dong y, 123` |
-| `/config-verify xoa-cau-hoi` | Xóa bớt một câu hỏi không cần thiết | `/config-verify xoa-cau-hoi so-thu-tu:2` |
-
-> 💡 **Mẹo:** Lệnh `/config-verify role` sẽ **tự động cảnh báo** nếu Role được chọn nằm cao hơn Role của Bot, giúp bạn tránh 100% lỗi thiếu quyền!
+1. **Menu chọn Role (Dropdown):** Bấm vào danh sách role của server $\rightarrow$ Chọn Role thành viên cần cấp (Tự động lưu và kiểm tra quyền).
+2. **Menu chọn Kênh duyệt (Dropdown):** Bấm chọn kênh văn bản Admin duyệt từ danh sách kênh của server.
+3. **Nút `[📝 Sửa Nội Dung & Ảnh]`:** Bật Popup để bạn sửa Tiêu đề, nhấn phím Enter xuống dòng lời chào, dán link ảnh Banner và Logo.
+4. **Nút `[🛡️ Đổi Chế Độ]`:** Nhấn 1 chạm để chuyển đổi qua lại giữa `Tự Động (AUTO)` và `Admin Duyệt (MANUAL_REVIEW)`.
+5. **Nút `[❓ Sửa Câu Hỏi]`:** Bật Popup để sửa câu hỏi 1, câu hỏi 2 và đáp án tương ứng.
+6. **Nút `[🚀 Gửi Bảng Xác Minh]`:** Gửi ngay bảng xác minh hoàn chỉnh ra kênh chat mà không cần gõ thêm lệnh nào khác!
 
 ---
 

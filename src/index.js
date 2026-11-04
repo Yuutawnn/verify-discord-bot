@@ -14,6 +14,7 @@ const {
 const { loadConfig } = require('./utils/configLoader');
 const { handleButtonClick } = require('./interactions/buttonClick');
 const { handleModalSubmit } = require('./interactions/modalSubmit');
+const { handleSelectMenu } = require('./interactions/selectMenu');
 
 // Nạp cấu hình từ config.json
 const config = loadConfig();
@@ -110,6 +111,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // 3. Xử lý Nộp Form (Modal Submit)
     if (interaction.isModalSubmit()) {
       await handleModalSubmit(interaction, currentConfig);
+      return;
+    }
+
+    // 4. Xử lý Menu Chọn (RoleSelect, ChannelSelect, StringSelect)
+    if (interaction.isAnySelectMenu()) {
+      await handleSelectMenu(interaction, currentConfig);
       return;
     }
   } catch (error) {

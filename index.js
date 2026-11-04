@@ -18,6 +18,7 @@ const interactionsPath = fs.existsSync(path.join(__dirname, 'interactions')) ? '
 const { loadConfig } = require(`${utilsPath}/configLoader`);
 const { handleButtonClick } = require(`${interactionsPath}/buttonClick`);
 const { handleModalSubmit } = require(`${interactionsPath}/modalSubmit`);
+const { handleSelectMenu } = require(`${interactionsPath}/selectMenu`);
 
 // Nạp cấu hình từ config.json
 const config = loadConfig();
@@ -117,6 +118,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // 3. Xử lý Nộp Form (Modal Submit)
     if (interaction.isModalSubmit()) {
       await handleModalSubmit(interaction, currentConfig);
+      return;
+    }
+
+    // 4. Xử lý Menu Chọn (RoleSelect, ChannelSelect, StringSelect)
+    if (interaction.isAnySelectMenu()) {
+      await handleSelectMenu(interaction, currentConfig);
       return;
     }
   } catch (error) {

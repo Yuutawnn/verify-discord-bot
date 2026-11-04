@@ -9,26 +9,32 @@ const {
   ActionRowBuilder
 } = require('discord.js');
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
-const { createVerifyMessage } = require('../utils/embeds');
+const { createVerifyMessage, createDashboard } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('config-verify')
     .setDescription('Xem và chỉnh sửa cấu hình hệ thống xác minh của bot')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    // 1. Xem cấu hình
+    // 1. Mở Bảng điều khiển tương tác (Component v2)
+    .addSubcommand(sub =>
+      sub
+        .setName('bang-dieu-khien')
+        .setDescription('Mở Bảng điều khiển tương tác (Component v2) với menu chọn Role, Kênh và nút bấm')
+    )
+    // 2. Xem cấu hình dạng tóm tắt
     .addSubcommand(sub =>
       sub
         .setName('xem')
         .setDescription('Xem các thiết lập xác minh hiện tại của server')
     )
-    // 2. Mở Popup Modal để sửa nội dung (Xuống dòng tự nhiên bằng phím Enter)
+    // 3. Mở Popup Modal để sửa nội dung (Xuống dòng tự nhiên bằng phím Enter)
     .addSubcommand(sub =>
       sub
         .setName('sua-noi-dung')
         .setDescription('Mở hộp thoại chỉnh sửa trực quan (Nhấn phím Enter xuống dòng, thêm link ảnh)')
     )
-    // 3. Đặt Role xác minh
+    // 4. Đặt Role xác minh
     .addSubcommand(sub =>
       sub
         .setName('role')
@@ -40,7 +46,7 @@ module.exports = {
             .setRequired(true)
         )
     )
-    // 4. Đổi chế độ xác minh
+    // 5. Đổi chế độ xác minh
     .addSubcommand(sub =>
       sub
         .setName('che-do')
@@ -56,7 +62,7 @@ module.exports = {
             )
         )
     )
-    // 5. Đặt kênh duyệt cho Admin
+    // 6. Đặt kênh duyệt cho Admin
     .addSubcommand(sub =>
       sub
         .setName('kenh-duyet')
@@ -69,7 +75,7 @@ module.exports = {
             .setRequired(true)
         )
     )
-    // 6. Chỉnh sửa nhanh bằng option (Thêm link ảnh Banner, ảnh Logo)
+    // 7. Chỉnh sửa nhanh bằng option (Thêm link ảnh Banner, ảnh Logo)
     .addSubcommand(sub =>
       sub
         .setName('noi-dung')
@@ -122,7 +128,7 @@ module.exports = {
             .setRequired(false)
         )
     )
-    // 7. Thêm/Sửa câu hỏi
+    // 8. Thêm/Sửa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('dat-cau-hoi')
@@ -149,7 +155,7 @@ module.exports = {
             .setRequired(false)
         )
     )
-    // 8. Xóa câu hỏi
+    // 9. Xóa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('xoa-cau-hoi')
@@ -185,57 +191,16 @@ module.exports = {
       raw.embed = {};
     }
 
-    // --- 1. LỆNH XEM CẤU HÌNH ---
-    if (sub === 'xem') {
+    // --- 1. MỞ BẢNG ĐIỀU KHIỂN TƯƠNG TÁC (COMPONENT V2) HOẶC XEM ---
+    if (sub === 'bang-dieu-khien' || sub === 'xem') {
       const normalized = loadConfig();
+      const { embed, components } = createDashboard(interaction.guild, normalized);
 
-      const roleDisplay = normalized.verifiedRoleId
-        ? `<@&${normalized.verifiedRoleId}> (\`${normalized.verifiedRoleId}\`)`
-        : '⚠️ *Chưa thiết lập (Dùng `/config-verify role`)*';
-
-      const modeDisplay = normalized.mode === 'AUTO'
-        ? '🤖 **Tự động (TU_DONG)** (So khớp từ khóa)'
-        : '👮 **Admin duyệt (ADMIN_DUYET)** (Bấm nút trên phiếu duyệt)';
-
-      const reviewChannelDisplay = normalized.reviewChannelId
-        ? `<#${normalized.reviewChannelId}>`
-        : (normalized.mode === 'MANUAL_REVIEW' ? '⚠️ *Chưa đặt kênh duyệt!*' : '*Không áp dụng ở chế độ tự động*');
-
-      const embed = new EmbedBuilder()
-        .setTitle('⚙️ Cấu Hình Hệ Thống Xác Minh Hiện Tại')
-        .setColor('#5865F2')
-        .addFields(
-          { name: '🎭 Role sẽ cấp', value: roleDisplay, inline: false },
-          { name: '🛡️ Chế độ xác minh', value: modeDisplay, inline: true },
-          { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true },
-          { 
-            name: '📝 Nội dung bảng xác minh', 
-            value: `**Tiêu đề:** ${normalized.embed.title}\n**Nút bấm:** ${normalized.embed.buttonEmoji} ${normalized.embed.buttonLabel}\n**Ảnh Banner:** ${normalized.embed.image ? `[Xem ảnh](${normalized.embed.image})` : '*Chưa có*'}\n*(Dùng \`/config-verify sua-noi-dung\` để chỉnh sửa trực quan)*`, 
-            inline: false 
-          }
-        );
-
-      if (normalized.questions.length === 0) {
-        embed.addFields({
-          name: '❓ Danh sách câu hỏi',
-          value: '⚠️ *Chưa có câu hỏi nào! Dùng lệnh `/config-verify dat-cau-hoi` để thêm.*'
-        });
-      } else {
-        const questionLines = normalized.questions.map((q, idx) => {
-          const ansText = q.correctAnswers && q.correctAnswers.length > 0
-            ? `\`${q.correctAnswers.join(', ')}\``
-            : '*Không chấm điểm (Khảo sát/Admin đọc)*';
-          return `**${idx + 1}.** ${q.label}\n👉 Đáp án đúng: ${ansText}`;
-        });
-
-        embed.addFields({
-          name: `❓ Danh sách câu hỏi (${normalized.questions.length}/5)`,
-          value: questionLines.join('\n\n')
-        });
-      }
-
-      embed.setFooter({ text: 'Dùng /config-verify để thay đổi cài đặt bất kỳ lúc nào' });
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({
+        embeds: [embed],
+        components: components,
+        ephemeral: true
+      });
     }
 
     // --- 2. LỆNH MỞ POPUP SỬA NỘI DUNG (NHẤN ENTER XUỐNG DÒNG) ---
@@ -355,14 +320,13 @@ module.exports = {
 
       if (!title && !description && !banner && !thumbnail && !buttonLabel && !buttonEmoji && !color) {
         return interaction.reply({
-          content: '⚠️ Bạn chưa điền tùy chọn nào!\n👉 Mẹo: Bạn có thể gõ lệnh `/config-verify sua-noi-dung` để mở bảng popup nhấn phím Enter xuống dòng trực tiếp!',
+          content: '⚠️ Bạn chưa điền tùy chọn nào!\n👉 Mẹo: Bạn có thể gõ lệnh `/config-verify bang-dieu-khien` để chỉnh sửa trực tiếp bằng nút bấm!',
           ephemeral: true
         });
       }
 
       if (title) raw.embed.title = title;
       if (description) {
-        // Hỗ trợ cả phím Enter, \n hoặc dấu | để xuống dòng
         raw.embed.description = description.replace(/\\n/g, '\n').replace(/\|/g, '\n');
       }
       if (banner !== null) raw.embed.image = banner;
@@ -386,7 +350,7 @@ module.exports = {
       const { embed: previewEmbed, row: previewRow } = createVerifyMessage(currentConfig);
 
       return interaction.reply({
-        content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Nếu muốn cập nhật bảng xác minh trong kênh chat, Admin gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
+        content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n\n👇 **Giao diện xem trước:**',
         embeds: [previewEmbed],
         components: [previewRow],
         ephemeral: true

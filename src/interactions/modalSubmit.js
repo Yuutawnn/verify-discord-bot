@@ -1,4 +1,4 @@
-const { createReviewCard, createLogEmbed, createVerifyMessage } = require('../utils/embeds');
+const { createReviewCard, createLogEmbed, createVerifyMessage, createDashboard } = require('../utils/embeds');
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 
 /**
@@ -30,14 +30,39 @@ async function handleModalSubmit(interaction, config) {
     const { embed, row } = createVerifyMessage(currentConfig);
 
     return interaction.reply({
-      content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Để cập nhật bảng hiển thị trong kênh chat, Admin chỉ cần gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
+      content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Để gửi bảng mới ra kênh chat, bạn chỉ cần bấm nút [Gửi Bảng Xác Minh] trên Dashboard hoặc gõ `/setup-verify`)*.\n\n👇 **Bản xem trước:**',
       embeds: [embed],
       components: [row],
       ephemeral: true
     });
   }
 
-  // 2. Xử lý khi thành viên nộp câu hỏi xác minh
+  // 2. Xử lý khi Admin nộp Modal chỉnh sửa câu hỏi & đáp án
+  if (interaction.customId === 'modal_edit_questions') {
+    const q1Text = interaction.fields.getTextInputValue('q1_text')?.trim();
+    const q1Ans = interaction.fields.getTextInputValue('q1_ans')?.trim();
+    const q2Text = interaction.fields.getTextInputValue('q2_text')?.trim();
+    const q2Ans = interaction.fields.getTextInputValue('q2_ans')?.trim();
+
+    const raw = getRawConfig();
+    raw.danh_sach_cau_hoi = [];
+
+    if (q1Text) {
+      raw.danh_sach_cau_hoi.push({ cau_hoi: q1Text, dap_an: q1Ans || '' });
+    }
+    if (q2Text) {
+      raw.danh_sach_cau_hoi.push({ cau_hoi: q2Text, dap_an: q2Ans || '' });
+    }
+
+    saveRawConfig(raw);
+
+    return interaction.reply({
+      content: `✅ **Đã lưu ${raw.danh_sach_cau_hoi.length} câu hỏi thành công!**\nCác thành viên xác minh tiếp theo sẽ nhận bộ câu hỏi mới này.`,
+      ephemeral: true
+    });
+  }
+
+  // 3. Xử lý khi thành viên nộp câu hỏi xác minh
   if (interaction.customId !== 'modal_verify') return;
 
   const { member, guild } = interaction;
@@ -67,10 +92,9 @@ async function handleModalSubmit(interaction, config) {
     }
   }
 
-  // 1. Chế độ TỰ ĐỘNG (AUTO)
+  // Chế độ TỰ ĐỘNG (AUTO)
   if (config.mode === 'AUTO') {
     if (!allCorrect) {
-      // Ghi log thất bại nếu có kênh log
       if (config.logChannelId) {
         const logChannel = guild.channels.cache.get(config.logChannelId);
         if (logChannel) {
@@ -90,7 +114,6 @@ async function handleModalSubmit(interaction, config) {
       });
     }
 
-    // Nếu trả lời đúng -> Cấp role
     try {
       if (config.verifiedRoleId) {
         await member.roles.add(config.verifiedRoleId);
@@ -99,7 +122,6 @@ async function handleModalSubmit(interaction, config) {
         await member.roles.remove(config.removeRoleId);
       }
 
-      // Ghi log thành công
       if (config.logChannelId) {
         const logChannel = guild.channels.cache.get(config.logChannelId);
         if (logChannel) {
@@ -125,10 +147,9 @@ async function handleModalSubmit(interaction, config) {
     }
   }
 
-  // 2. Chế độ KIỂM DUYỆT THỦ CÔNG (MANUAL_REVIEW)
+  // Chế độ KIỂM DUYỆT THỦ CÔNG (MANUAL_REVIEW)
   if (config.mode === 'MANUAL_REVIEW') {
     if (!config.reviewChannelId) {
-      console.error('Chưa cấu hình reviewChannelId trong config.json!');
       return interaction.reply({
         content: '❌ Lỗi hệ thống: Kênh duyệt chưa được cấu hình. Vui lòng liên hệ Admin!',
         ephemeral: true
@@ -137,7 +158,6 @@ async function handleModalSubmit(interaction, config) {
 
     const reviewChannel = guild.channels.cache.get(config.reviewChannelId);
     if (!reviewChannel || !reviewChannel.isTextBased()) {
-      console.error(`Không tìm thấy kênh reviewChannelId: ${config.reviewChannelId}`);
       return interaction.reply({
         content: '❌ Lỗi hệ thống: Không tìm thấy kênh duyệt của Admin!',
         ephemeral: true
@@ -161,9 +181,8 @@ async function handleModalSubmit(interaction, config) {
     }
   }
 
-  // Trường hợp mode không hợp lệ
   return interaction.reply({
-    content: '⚠️ Chế độ xác thực chưa được cài đặt đúng trong config.json (AUTO hoặc MANUAL_REVIEW).',
+    content: '⚠️ Chế độ xác thực chưa được cài đặt đúng trong config.json.',
     ephemeral: true
   });
 }

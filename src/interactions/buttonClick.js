@@ -6,7 +6,8 @@ const {
   PermissionFlagsBits,
   EmbedBuilder
 } = require('discord.js');
-const { createLogEmbed } = require('../utils/embeds');
+const { createLogEmbed, createDashboard, createVerifyMessage } = require('../utils/embeds');
+const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 
 /**
  * Xử lý các sự kiện bấm nút
@@ -16,9 +17,12 @@ const { createLogEmbed } = require('../utils/embeds');
 async function handleButtonClick(interaction, config) {
   const { customId, member, guild } = interaction;
 
+  // ==========================================
+  // A. NÚT DÀNH CHO THÀNH VIÊN XÁC MINH
+  // ==========================================
+
   // 1. Khi người dùng bấm nút "Bắt đầu xác minh"
   if (customId === 'btn_start_verify') {
-    // Kiểm tra xem đã có role xác minh chưa
     if (config.verifiedRoleId && member.roles.cache.has(config.verifiedRoleId)) {
       return interaction.reply({
         content: config.messages?.alreadyVerified || '❌ Bạn đã được xác minh trước đó rồi!',
@@ -26,12 +30,11 @@ async function handleButtonClick(interaction, config) {
       });
     }
 
-    // Tạo Modal
     const modal = new ModalBuilder()
       .setCustomId('modal_verify')
       .setTitle('Xác Minh Thành Viên');
 
-    const questions = (config.questions || []).slice(0, 5); // Discord giới hạn tối đa 5 trường nhập
+    const questions = (config.questions || []).slice(0, 5);
 
     if (questions.length === 0) {
       return interaction.reply({
@@ -43,7 +46,7 @@ async function handleButtonClick(interaction, config) {
     const rows = questions.map((q) => {
       const textInput = new TextInputBuilder()
         .setCustomId(`question_${q.id}`)
-        .setLabel(q.label.slice(0, 45)) // Discord giới hạn 45 ký tự cho label
+        .setLabel(q.label.slice(0, 45))
         .setStyle(q.style === 'Paragraph' ? TextInputStyle.Paragraph : TextInputStyle.Short)
         .setRequired(q.required !== false);
 
@@ -58,7 +61,160 @@ async function handleButtonClick(interaction, config) {
     return interaction.showModal(modal);
   }
 
-  // 2. Khi Admin bấm nút "Phê duyệt" (Approve)
+  // ==========================================
+  // B. CÁC NÚT BẢNG ĐIỀU KHIỂN (DASHBOARD COMPONENT V2)
+  // ==========================================
+
+  // 2. Mở Popup sửa nội dung & ảnh
+  if (customId === 'btn_cfg_edit_content') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId('modal_edit_content')
+      .setTitle('Sửa Bảng Xác Minh (Enter xuống dòng)');
+
+    const titleInput = new TextInputBuilder()
+      .setCustomId('edit_title')
+      .setLabel('Tiêu đề bảng xác minh')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.title || '🛡️ XÁC MINH THÀNH VIÊN').slice(0, 100))
+      .setRequired(true);
+
+    const descInput = new TextInputBuilder()
+      .setCustomId('edit_description')
+      .setLabel('Nội dung (Nhấn Enter để xuống dòng)')
+      .setStyle(TextInputStyle.Paragraph)
+      .setValue((config.embed.description || '').slice(0, 2000))
+      .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
+      .setRequired(true);
+
+    const btnInput = new TextInputBuilder()
+      .setCustomId('edit_button_label')
+      .setLabel('Chữ hiển thị trên nút bấm')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.buttonLabel || 'Bắt đầu xác minh').slice(0, 50))
+      .setRequired(false);
+
+    const imageInput = new TextInputBuilder()
+      .setCustomId('edit_image')
+      .setLabel('Link ảnh Banner lớn (URL ảnh .png/.jpg)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.image || '').slice(0, 400))
+      .setPlaceholder('https://example.com/banner.png')
+      .setRequired(false);
+
+    const thumbInput = new TextInputBuilder()
+      .setCustomId('edit_thumbnail')
+      .setLabel('Link ảnh Logo nhỏ góc phải (URL ảnh)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.thumbnail || '').slice(0, 400))
+      .setPlaceholder('https://example.com/logo.png')
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(titleInput),
+      new ActionRowBuilder().addComponents(descInput),
+      new ActionRowBuilder().addComponents(btnInput),
+      new ActionRowBuilder().addComponents(imageInput),
+      new ActionRowBuilder().addComponents(thumbInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  // 3. Đảo chế độ (Tự Động <-> Admin Duyệt)
+  if (customId === 'btn_cfg_toggle_mode') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const raw = getRawConfig();
+    const currentMode = String(raw.che_do || raw.mode || '').toUpperCase();
+    const newMode = (currentMode === 'ADMIN_DUYET' || currentMode === 'MANUAL_REVIEW') ? 'TU_DONG' : 'ADMIN_DUYET';
+    raw.che_do = newMode;
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(guild, newConfig);
+
+    return interaction.update({ embeds: [embed], components });
+  }
+
+  // 4. Mở Popup sửa câu hỏi & đáp án
+  if (customId === 'btn_cfg_edit_questions') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId('modal_edit_questions')
+      .setTitle('Sửa Câu Hỏi Xác Minh');
+
+    const q1 = config.questions[0] || {};
+    const q2 = config.questions[1] || {};
+
+    const q1Text = new TextInputBuilder()
+      .setCustomId('q1_text')
+      .setLabel('Câu hỏi 1 (Tối đa 45 ký tự)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((q1.label || '').slice(0, 45))
+      .setRequired(true);
+
+    const q1Ans = new TextInputBuilder()
+      .setCustomId('q1_ans')
+      .setLabel('Đáp án đúng câu 1 (cách nhau dấu phẩy)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((q1.correctAnswers ? q1.correctAnswers.join(', ') : '').slice(0, 100))
+      .setPlaceholder('VD: dong y, agree, pass123')
+      .setRequired(false);
+
+    const q2Text = new TextInputBuilder()
+      .setCustomId('q2_text')
+      .setLabel('Câu hỏi 2 (Tùy chọn, tối đa 45 ký tự)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((q2.label || '').slice(0, 45))
+      .setRequired(false);
+
+    const q2Ans = new TextInputBuilder()
+      .setCustomId('q2_ans')
+      .setLabel('Đáp án đúng câu 2 (bỏ trống = khảo sát)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((q2.correctAnswers ? q2.correctAnswers.join(', ') : '').slice(0, 100))
+      .setPlaceholder('Bỏ trống nếu không cần chấm điểm')
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(q1Text),
+      new ActionRowBuilder().addComponents(q1Ans),
+      new ActionRowBuilder().addComponents(q2Text),
+      new ActionRowBuilder().addComponents(q2Ans)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  // 5. Gửi bảng xác minh ra kênh chat
+  if (customId === 'btn_cfg_deploy_verify') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const { embed: verifyEmbed, row: verifyRow } = createVerifyMessage(config);
+    await interaction.channel.send({ embeds: [verifyEmbed], components: [verifyRow] });
+
+    return interaction.reply({
+      content: `✅ Đã gửi bảng xác minh ra kênh ${interaction.channel} thành công!`,
+      ephemeral: true
+    });
+  }
+
+  // ==========================================
+  // C. CÁC NÚT PHÊ DUYỆT / TỪ CHỐI CỦA ADMIN
+  // ==========================================
+
+  // 6. Khi Admin bấm nút "Phê duyệt" (Approve)
   if (customId.startsWith('btn_approve_')) {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles) &&
         !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -79,7 +235,6 @@ async function handleButtonClick(interaction, config) {
       });
     }
 
-    // Cấp role
     try {
       if (config.verifiedRoleId) {
         await targetMember.roles.add(config.verifiedRoleId);
@@ -88,17 +243,13 @@ async function handleButtonClick(interaction, config) {
         await targetMember.roles.remove(config.removeRoleId);
       }
 
-      // Gửi DM cho thành viên
       try {
         await targetMember.send(
           config.messages?.approvedDirect ||
           `🎉 Yêu cầu xác minh của bạn tại **${guild.name}** đã được phê duyệt!`
         );
-      } catch {
-        // Người dùng tắt DM, bỏ qua
-      }
+      } catch {}
 
-      // Cập nhật giao diện tin nhắn duyệt
       const oldEmbed = interaction.message.embeds[0];
       const updatedEmbed = EmbedBuilder.from(oldEmbed)
         .setColor('#57F287')
@@ -110,10 +261,9 @@ async function handleButtonClick(interaction, config) {
 
       await interaction.update({
         embeds: [updatedEmbed],
-        components: [] // Xóa nút bấm sau khi đã xử lý
+        components: []
       });
 
-      // Ghi log nếu có cấu hình
       if (config.logChannelId) {
         const logChannel = guild.channels.cache.get(config.logChannelId);
         if (logChannel) {
@@ -135,7 +285,7 @@ async function handleButtonClick(interaction, config) {
     }
   }
 
-  // 3. Khi Admin bấm nút "Từ chối" (Reject)
+  // 7. Khi Admin bấm nút "Từ chối" (Reject)
   if (customId.startsWith('btn_reject_')) {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles) &&
         !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -159,9 +309,7 @@ async function handleButtonClick(interaction, config) {
           (config.messages?.rejectedDirect || '⚠️ Yêu cầu xác minh của bạn đã bị từ chối.') +
           `\nServer: **${guild.name}**`
         );
-      } catch {
-        // Người dùng tắt DM
-      }
+      } catch {}
     }
 
     const oldEmbed = interaction.message.embeds[0];
@@ -178,7 +326,6 @@ async function handleButtonClick(interaction, config) {
       components: []
     });
 
-    // Ghi log
     if (config.logChannelId && targetMember) {
       const logChannel = guild.channels.cache.get(config.logChannelId);
       if (logChannel) {
