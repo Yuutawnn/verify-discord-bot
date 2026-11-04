@@ -40,7 +40,25 @@ module.exports = {
         .setName('sua-tin-nhan')
         .setDescription('Mở hộp thoại tùy chỉnh tin nhắn phản hồi cho thành viên khi xác minh')
     )
-    // 5. Đặt Role xác minh
+    // 5. Mở Popup Modal để sửa chữ nút & link phụ
+    .addSubcommand(sub =>
+      sub
+        .setName('sua-nut')
+        .setDescription('Mở hộp thoại chỉnh sửa chữ, icon emoji và nút link liên kết phụ')
+    )
+    // 6. Bật/tắt đường kẻ phân cách Divider
+    .addSubcommand(sub =>
+      sub
+        .setName('duong-ke')
+        .setDescription('Bật hoặc tắt đường kẻ phân cách (Divider) trong bảng xác minh Component V2')
+        .addBooleanOption(opt =>
+          opt
+            .setName('trang-thai')
+            .setDescription('Chọn True để bật hoặc False để tắt đường kẻ')
+            .setRequired(true)
+        )
+    )
+    // 7. Đặt Role xác minh
     .addSubcommand(sub =>
       sub
         .setName('role')
@@ -323,6 +341,76 @@ module.exports = {
       );
 
       return interaction.showModal(modal);
+    }
+
+    // --- LỆNH MỞ POPUP SỬA NÚT BẤM & LINK PHỤ ---
+    if (sub === 'sua-nut') {
+      const current = loadConfig();
+      const modal = new ModalBuilder()
+        .setCustomId('modal_edit_buttons')
+        .setTitle('Chỉnh Nút Xác Minh & Link Phụ');
+
+      const btnLabelInput = new TextInputBuilder()
+        .setCustomId('btn_label')
+        .setLabel('Chữ trên nút xác minh'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed?.buttonLabel || 'Xác minh').slice(0, 80))
+        .setPlaceholder('VD: Xác minh, Bắt đầu xác minh...')
+        .setRequired(true);
+
+      const btnEmojiInput = new TextInputBuilder()
+        .setCustomId('btn_emoji')
+        .setLabel('Icon emoji nút xác minh'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed?.buttonEmoji || '🛡️').slice(0, 20))
+        .setPlaceholder('VD: 🛡️, ✅, 🔄...')
+        .setRequired(false);
+
+      const linkLabelInput = new TextInputBuilder()
+        .setCustomId('btn_link_label')
+        .setLabel('Chữ nút phụ / Link (Bỏ trống nếu tắt)'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed?.secondButton?.label || 'Hỗ Trợ').slice(0, 80))
+        .setPlaceholder('VD: Hỗ Trợ, Ticket, Nội Quy...')
+        .setRequired(false);
+
+      const linkEmojiInput = new TextInputBuilder()
+        .setCustomId('btn_link_emoji')
+        .setLabel('Icon emoji nút phụ / Link'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed?.secondButton?.emoji || '🎫').slice(0, 20))
+        .setPlaceholder('VD: 🎫, 📖, 🌐...')
+        .setRequired(false);
+
+      const linkUrlInput = new TextInputBuilder()
+        .setCustomId('btn_link_url')
+        .setLabel('Link URL nút phụ (https://...)'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed?.secondButton?.url || '').slice(0, 400))
+        .setPlaceholder('https://discord.gg/linkserver (để trống để tắt)')
+        .setRequired(false);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(btnLabelInput),
+        new ActionRowBuilder().addComponents(btnEmojiInput),
+        new ActionRowBuilder().addComponents(linkLabelInput),
+        new ActionRowBuilder().addComponents(linkEmojiInput),
+        new ActionRowBuilder().addComponents(linkUrlInput)
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // --- LỆNH BẬT / TẮT ĐƯỜNG KẺ DIVIDER ---
+    if (sub === 'duong-ke') {
+      const state = interaction.options.getBoolean('trang-thai');
+      raw.duong_ke = state;
+      saveRawConfig(raw);
+
+      return interaction.reply({
+        content: `✅ Đã **${state ? 'BẬT' : 'TẮT'}** đường kẻ phân cách (Divider) trong bảng xác minh Component V2 thành công!`,
+        ephemeral: true
+      });
     }
 
     // --- 3. LỆNH ĐẶT ROLE ---

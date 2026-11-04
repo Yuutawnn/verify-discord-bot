@@ -12,6 +12,8 @@ const {
   TextDisplayBuilder,
   MediaGalleryBuilder,
   MediaGalleryItemBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags
 } = require('discord.js');
 
@@ -65,6 +67,12 @@ function createVerifyMessage(config) {
     container.addMediaGalleryComponents(media);
   }
 
+  // Đường kẻ phân cách (Divider Component V2)
+  if (config.embed?.divider) {
+    const sep = new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small);
+    container.addSeparatorComponents(sep);
+  }
+
   // Chân trang (Footer)
   if (config.embed?.footer) {
     container.addTextDisplayComponents(
@@ -72,7 +80,7 @@ function createVerifyMessage(config) {
     );
   }
 
-  // Nút bấm: Mặc định xám (không màu), có thể tùy chỉnh
+  // Nút bấm xác minh chính
   const button = new ButtonBuilder()
     .setCustomId('btn_start_verify')
     .setLabel(config.embed?.buttonLabel || 'Xác minh')
@@ -82,7 +90,22 @@ function createVerifyMessage(config) {
     button.setEmoji(config.embed.buttonEmoji);
   }
 
-  const row = new ActionRowBuilder().addComponents(button);
+  const buttons = [button];
+
+  // Nút liên kết phụ (Link Button) nếu có
+  if (config.embed?.secondButton?.enabled && config.embed.secondButton.url) {
+    const linkBtn = new ButtonBuilder()
+      .setLabel(config.embed.secondButton.label || 'Hỗ Trợ')
+      .setStyle(ButtonStyle.Link)
+      .setURL(config.embed.secondButton.url);
+
+    if (config.embed.secondButton.emoji) {
+      linkBtn.setEmoji(config.embed.secondButton.emoji);
+    }
+    buttons.push(linkBtn);
+  }
+
+  const row = new ActionRowBuilder().addComponents(...buttons);
 
   // Đưa nút vào TRONG Container của Component V2
   container.addActionRowComponents(row);
@@ -225,7 +248,12 @@ function createDashboard(guild, config) {
       { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: false },
       {
         name: '📝 Nội dung bảng xác minh (Component V2)',
-        value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Kiểu nút:** ${btnColorText}\n**Chữ nút:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Xác minh'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}\n**Chân trang:** ${config.embed?.footer || '*Không có*'}`,
+        value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}\n**Chân trang:** ${config.embed?.footer || '*Không có*'}\n**Đường kẻ (Divider):** ${config.embed?.divider ? '✅ Đang Bật' : '❌ Đang Tắt'}`,
+        inline: false
+      },
+      {
+        name: '🔘 Cấu hình Nút bấm',
+        value: `**Nút xác minh:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Xác minh'} (${btnColorText})\n**Nút phụ (Link):** ${config.embed?.secondButton?.enabled && config.embed.secondButton.url ? `${config.embed.secondButton.emoji || ''} ${config.embed.secondButton.label || 'Link'} ([Mở link](${config.embed.secondButton.url}))` : '*Đang tắt*'}`,
         inline: false
       },
       {
@@ -307,18 +335,30 @@ function createDashboard(guild, config) {
     btnEditQuestions
   );
 
-  // Row 5: Đổi chế độ, màu nút và gửi bảng xác minh
-  const btnToggleMode = new ButtonBuilder()
-    .setCustomId('btn_cfg_toggle_mode')
-    .setLabel(`Chế Độ (${config.mode === 'AUTO' ? 'Tự Động' : 'Duyệt'})`)
-    .setStyle(ButtonStyle.Secondary)
-    .setEmoji('🛡️');
+  // Row 5: Tùy chỉnh Nút bấm, Màu nút, Đường kẻ, Chế độ và Gửi bảng
+  const btnEditButtons = new ButtonBuilder()
+    .setCustomId('btn_cfg_edit_buttons')
+    .setLabel('Chỉnh Nút & Link')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('🔲');
 
   const btnToggleColor = new ButtonBuilder()
     .setCustomId('btn_cfg_toggle_btn_color')
     .setLabel('Màu Nút')
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('🎨');
+
+  const btnToggleDivider = new ButtonBuilder()
+    .setCustomId('btn_cfg_toggle_divider')
+    .setLabel(`Đường Kẻ (${config.embed?.divider ? 'BẬT' : 'TẮT'})`)
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('➖');
+
+  const btnToggleMode = new ButtonBuilder()
+    .setCustomId('btn_cfg_toggle_mode')
+    .setLabel(`Chế Độ (${config.mode === 'AUTO' ? 'Tự Động' : 'Duyệt'})`)
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('🛡️');
 
   const btnDeploy = new ButtonBuilder()
     .setCustomId('btn_cfg_deploy_verify')
@@ -327,8 +367,10 @@ function createDashboard(guild, config) {
     .setEmoji('🚀');
 
   const rowButtons2 = new ActionRowBuilder().addComponents(
-    btnToggleMode,
+    btnEditButtons,
     btnToggleColor,
+    btnToggleDivider,
+    btnToggleMode,
     btnDeploy
   );
 

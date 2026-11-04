@@ -199,7 +199,7 @@ async function handleButtonClick(interaction, config) {
     return interaction.update({ embeds: [embed], components });
   }
 
-  // 4. Đổi màu nút bấm (Xám không màu <-> Xanh lá <-> Xanh dương <-> Đỏ)
+  // 5. Đổi màu nút bấm (Xám không màu <-> Xanh lá <-> Xanh dương <-> Đỏ)
   if (customId === 'btn_cfg_toggle_btn_color') {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
@@ -207,12 +207,14 @@ async function handleButtonClick(interaction, config) {
 
     const raw = getRawConfig();
     if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
+    if (!raw.nut_xac_minh || typeof raw.nut_xac_minh !== 'object') raw.nut_xac_minh = {};
 
     const colorCycle = ['XAM', 'XANH_LA', 'XANH_DUONG', 'DO'];
-    const currentBtn = String(raw.embed.buttonStyle || raw.kieu_nut || raw.mau_nut || 'XAM').toUpperCase();
+    const currentBtn = String(raw.nut_xac_minh?.mau_nut || raw.embed.buttonStyle || raw.kieu_nut || raw.mau_nut || 'XAM').toUpperCase();
     let nextIdx = (colorCycle.indexOf(currentBtn) + 1) % colorCycle.length;
     if (nextIdx < 0) nextIdx = 0;
 
+    raw.nut_xac_minh.mau_nut = colorCycle[nextIdx];
     raw.embed.buttonStyle = colorCycle[nextIdx];
     saveRawConfig(raw);
 
@@ -220,6 +222,84 @@ async function handleButtonClick(interaction, config) {
     const { embed, components } = createDashboard(guild, newConfig);
 
     return interaction.update({ embeds: [embed], components });
+  }
+
+  // 6. Bật / Tắt đường kẻ phân cách (Divider Component V2)
+  if (customId === 'btn_cfg_toggle_divider') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const raw = getRawConfig();
+    const currentDivider = raw.duong_ke ?? raw.divider ?? true;
+    raw.duong_ke = !currentDivider;
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(guild, newConfig);
+
+    return interaction.update({ embeds: [embed], components });
+  }
+
+  // 7. Mở Modal tùy chỉnh Chữ nút xác minh & Nút liên kết phụ (Link Button)
+  if (customId === 'btn_cfg_edit_buttons') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId('modal_edit_buttons')
+      .setTitle('Chỉnh Nút Xác Minh & Link Phụ');
+
+    const btnLabelInput = new TextInputBuilder()
+      .setCustomId('btn_label')
+      .setLabel('Chữ trên nút xác minh'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed?.buttonLabel || 'Xác minh').slice(0, 80))
+      .setPlaceholder('VD: Xác minh, Bắt đầu xác minh...')
+      .setRequired(true);
+
+    const btnEmojiInput = new TextInputBuilder()
+      .setCustomId('btn_emoji')
+      .setLabel('Icon emoji nút xác minh'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed?.buttonEmoji || '🛡️').slice(0, 20))
+      .setPlaceholder('VD: 🛡️, ✅, 🔄...')
+      .setRequired(false);
+
+    const linkLabelInput = new TextInputBuilder()
+      .setCustomId('btn_link_label')
+      .setLabel('Chữ nút phụ / Link (Bỏ trống nếu tắt)'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed?.secondButton?.label || 'Hỗ Trợ').slice(0, 80))
+      .setPlaceholder('VD: Hỗ Trợ, Ticket, Nội Quy...')
+      .setRequired(false);
+
+    const linkEmojiInput = new TextInputBuilder()
+      .setCustomId('btn_link_emoji')
+      .setLabel('Icon emoji nút phụ / Link'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed?.secondButton?.emoji || '🎫').slice(0, 20))
+      .setPlaceholder('VD: 🎫, 📖, 🌐...')
+      .setRequired(false);
+
+    const linkUrlInput = new TextInputBuilder()
+      .setCustomId('btn_link_url')
+      .setLabel('Link URL nút phụ (https://...)'.slice(0, 45))
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed?.secondButton?.url || '').slice(0, 400))
+      .setPlaceholder('https://discord.gg/linkserver (để trống để tắt)')
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(btnLabelInput),
+      new ActionRowBuilder().addComponents(btnEmojiInput),
+      new ActionRowBuilder().addComponents(linkLabelInput),
+      new ActionRowBuilder().addComponents(linkEmojiInput),
+      new ActionRowBuilder().addComponents(linkUrlInput)
+    );
+
+    return interaction.showModal(modal);
   }
 
   // 4. Mở Popup sửa câu hỏi & đáp án

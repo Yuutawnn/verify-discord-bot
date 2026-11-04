@@ -117,7 +117,56 @@ async function handleModalSubmit(interaction, config) {
     });
   }
 
-  // 4. Xử lý khi thành viên nộp câu hỏi xác minh
+  // 4. Xử lý khi Admin nộp Modal chỉnh sửa nút bấm & link phụ
+  if (customId === 'modal_edit_buttons') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: '❌ Chỉ có Administrator mới có quyền chỉnh sửa cài đặt!',
+        ephemeral: true
+      });
+    }
+
+    const raw = getRawConfig();
+    if (!raw.nut_xac_minh || typeof raw.nut_xac_minh !== 'object') raw.nut_xac_minh = {};
+    if (!raw.nut_phu || typeof raw.nut_phu !== 'object') raw.nut_phu = {};
+    if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
+
+    const btnLabel = getFieldValue(interaction, 'btn_label');
+    const btnEmoji = getFieldValue(interaction, 'btn_emoji');
+    const linkLabel = getFieldValue(interaction, 'btn_link_label');
+    const linkEmoji = getFieldValue(interaction, 'btn_link_emoji');
+    const linkUrl = getFieldValue(interaction, 'btn_link_url');
+
+    if (btnLabel !== null && btnLabel !== '') {
+      raw.nut_xac_minh.chu_nut = btnLabel;
+      raw.embed.buttonLabel = btnLabel;
+    }
+    if (btnEmoji !== null) {
+      raw.nut_xac_minh.icon = btnEmoji;
+      raw.embed.buttonEmoji = btnEmoji;
+    }
+
+    if (linkLabel !== null) raw.nut_phu.chu_nut = linkLabel;
+    if (linkEmoji !== null) raw.nut_phu.icon = linkEmoji;
+    if (linkUrl !== null) {
+      raw.nut_phu.link = linkUrl;
+      raw.nut_phu.bat = Boolean(linkUrl && (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')));
+    }
+
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(interaction.guild, newConfig);
+
+    return interaction.reply({
+      content: '✅ **Đã cập nhật cấu hình Nút xác minh & Nút liên kết phụ thành công!**',
+      embeds: [embed],
+      components,
+      ephemeral: true
+    });
+  }
+
+  // 5. Xử lý khi thành viên nộp câu hỏi xác minh
   if (customId !== 'modal_verify') return;
 
   const questions = config.questions || [];

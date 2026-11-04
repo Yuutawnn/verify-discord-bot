@@ -38,8 +38,12 @@ Mở file **`config.json`** trong thư mục. Bạn sẽ thấy giao diện cự
 4. **`danh_sach_cau_hoi`**:
    - `"cau_hoi"`: Tiêu đề câu hỏi muốn hỏi.
    - `"dap_an"`: Các từ khóa đúng (viết hoa/thường đều được, cách nhau bằng dấu phẩy `,`). **Nếu câu hỏi dạng khảo sát không cần chấm điểm, chỉ cần để trống: `""`**.
-5. **`kenh_admin_duyet`**: Dán ID kênh riêng của Admin (chỉ cần điền nếu bạn chọn chế độ `"ADMIN_DUYET"`).
-6. **`tin_nhan_phan_hoi`**: Tùy chỉnh câu chữ Bot phản hồi cho member (thành công, thất bại, chờ duyệt, DM riêng). Bạn cũng có thể bấm nút **[💬 Tin Nhắn Reply]** trên Dashboard để sửa trực tiếp!
+5. **`duong_ke`**: `true` hoặc `false` để bật/tắt đường kẻ ngang phân cách (Divider) theo chuẩn Discord Component V2.
+6. **`nut_xac_minh` & `nut_phu`**:
+   - `nut_xac_minh`: Đổi chữ, icon emoji, màu sắc nút xác minh chính.
+   - `nut_phu`: Thêm một nút liên kết (Link Button) bên cạnh nút xác minh để mở link Ticket, Nội Quy, hoặc link Server (bật/tắt tùy ý).
+7. **`kenh_admin_duyet`**: Dán ID kênh riêng của Admin (chỉ cần điền nếu bạn chọn chế độ `"ADMIN_DUYET"`).
+8. **`tin_nhan_phan_hoi`**: Tùy chỉnh câu chữ Bot phản hồi cho member (thành công, thất bại, chờ duyệt, DM riêng). Bạn cũng có thể bấm nút **[💬 Tin Nhắn Reply]** hoặc **[🔲 Chỉnh Nút & Link]** trên Dashboard để sửa trực tiếp!
 
 ---
 

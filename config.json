@@ -12,7 +12,18 @@
   "anh_nho": "",
   "chan_trang": "Community Server | discord.gg/linkserver",
   "mau_sac": "#2B2D31",
-  "mau_nut": "XAM",
+  "duong_ke": true,
+  "nut_xac_minh": {
+    "chu_nut": "Xác minh",
+    "icon": "🛡️",
+    "mau_nut": "XAM"
+  },
+  "nut_phu": {
+    "bat": false,
+    "chu_nut": "Hỗ Trợ",
+    "icon": "🎫",
+    "link": "https://discord.gg/linkserver"
+  },
   "danh_sach_cau_hoi": [
     {
       "cau_hoi": "Mật khẩu xác minh trong nội quy là gì?",

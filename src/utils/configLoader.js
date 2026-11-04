@@ -55,13 +55,37 @@ function loadConfig() {
     desc = 'Chào mừng bạn đến với server!\n\nĐể mở khóa các kênh và trò chuyện cùng mọi người, vui lòng bấm nút **Bắt đầu xác minh** bên dưới và trả lời câu hỏi xác thực.';
   }
 
+  // Divider (Đường kẻ phân cách trong Component V2)
+  const divider = raw.duong_ke ?? raw.divider ?? raw.embed?.divider ?? true;
+
+  // Nút xác minh chính
+  const rawMainBtn = raw.nut_xac_minh || raw.nut_chinh || {};
+  const buttonLabel = rawMainBtn.chu_nut || raw.embed?.buttonLabel || raw.chu_nut_bam || raw.chu_nut || 'Xác minh';
+  const buttonEmoji = rawMainBtn.icon || rawMainBtn.emoji || raw.embed?.buttonEmoji || raw.icon_nut || '🛡️';
+  const buttonStyle = rawMainBtn.mau_nut || rawMainBtn.kieu_nut || raw.embed?.buttonStyle || raw.kieu_nut || raw.mau_nut || 'Secondary';
+
+  // Nút phụ / Nút liên kết (Link Button)
+  const rawSecondBtn = raw.nut_phu || raw.link_button || raw.nut_link || {};
+  const isSecondBtnEnabled = rawSecondBtn.bat !== undefined
+    ? Boolean(rawSecondBtn.bat)
+    : Boolean(rawSecondBtn.link && String(rawSecondBtn.link).startsWith('http'));
+
+  const secondButton = {
+    enabled: isSecondBtnEnabled,
+    label: rawSecondBtn.chu_nut || rawSecondBtn.label || 'Hỗ Trợ',
+    emoji: rawSecondBtn.icon || rawSecondBtn.emoji || '🎫',
+    url: rawSecondBtn.link || rawSecondBtn.url || ''
+  };
+
   const embed = {
-    title: raw.embed?.title ?? raw.tieu_de ?? '🛡️ XÁC MINH THÀNH VIÊN',
+    title: raw.embed?.title ?? raw.tieu_de ?? '🛡️ CỔNG XÁC MINH THÀNH VIÊN',
     description: desc,
     color: raw.embed?.color || raw.mau_sac || '#2B2D31',
-    buttonLabel: raw.embed?.buttonLabel || raw.chu_nut_bam || raw.chu_nut || 'Xác minh',
-    buttonEmoji: raw.embed?.buttonEmoji || raw.icon_nut || '🛡️',
-    buttonStyle: raw.embed?.buttonStyle || raw.kieu_nut || raw.mau_nut || 'Secondary',
+    divider,
+    buttonLabel,
+    buttonEmoji,
+    buttonStyle,
+    secondButton,
     image: raw.embed?.image || raw.anh_banner || raw.anh || '',
     thumbnail: raw.embed?.thumbnail || raw.anh_nho || raw.logo || '',
     footer: raw.embed?.footer || raw.chan_trang || ''

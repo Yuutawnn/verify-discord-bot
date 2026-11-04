@@ -11,6 +11,9 @@ assert(config.mode === 'AUTO' || config.mode === 'MANUAL_REVIEW', 'Chế độ p
 assert(Array.isArray(config.questions), 'questions phải là một mảng');
 assert(config.questions.length > 0 && config.questions.length <= 5, 'Số lượng câu hỏi phải từ 1 đến 5');
 assert('removeRoleId' in config, 'config phải hỗ trợ trường removeRoleId (role_unverify)');
+assert('divider' in config.embed, 'config.embed phải hỗ trợ trường divider (duong_ke)');
+assert('buttonLabel' in config.embed, 'config.embed phải hỗ trợ buttonLabel');
+assert('secondButton' in config.embed, 'config.embed phải hỗ trợ secondButton');
 console.log('✅ loadConfig() chuẩn hóa cấu hình thành công!');
 
 // 2. Kiểm tra hàm tạo Embed & Component V2 xác minh
@@ -21,6 +24,18 @@ assert(row.components[0].data.custom_id === 'btn_start_verify', 'custom_id của
 assert(v2Payload && v2Payload.flags === 32768, 'v2Payload phải có cờ IsComponentsV2');
 assert(v2Payload.components.length === 1, 'v2Payload phải chứa Container Component V2');
 assert(classicPayload && classicPayload.embeds.length === 1, 'classicPayload phải có embed');
+
+// Kiểm tra khi bật nút phụ (Link Button)
+const configWithLink = JSON.parse(JSON.stringify(config));
+configWithLink.embed.secondButton = {
+  enabled: true,
+  label: 'Hỗ Trợ',
+  emoji: '🎫',
+  url: 'https://discord.gg/linkserver'
+};
+const resWithLink = createVerifyMessage(configWithLink);
+assert(resWithLink.row.components.length === 2, 'Khi bật nút phụ, bảng xác minh phải có 2 nút');
+assert(resWithLink.row.components[1].data.style === 5, 'Nút phụ phải là Link Button (style 5)');
 console.log('✅ Tạo Embed & Container Component V2 bảng xác minh (Nút trong Embed) thành công!');
 
 // 3. Kiểm thử logic so khớp đáp án (trong chế độ AUTO)
@@ -55,10 +70,10 @@ console.log('✅ getRawConfig và saveRawConfig hoạt động hoàn hảo!');
 // 5. Kiểm thử cấu trúc lệnh /config-verify
 assert(configVerifyCommand.data.name === 'config-verify', 'Tên lệnh phải là config-verify');
 const subcommands = configVerifyCommand.data.options.map(o => o.name);
-const expectedSubs = ['bang-dieu-khien', 'xem', 'sua-noi-dung', 'sua-tin-nhan', 'role', 'che-do', 'kenh-duyet', 'noi-dung', 'dat-cau-hoi', 'xoa-cau-hoi'];
+const expectedSubs = ['bang-dieu-khien', 'xem', 'sua-noi-dung', 'sua-tin-nhan', 'sua-nut', 'duong-ke', 'role', 'che-do', 'kenh-duyet', 'noi-dung', 'dat-cau-hoi', 'xoa-cau-hoi'];
 for (const sub of expectedSubs) {
   assert(subcommands.includes(sub), `Thiếu subcommand ${sub}`);
 }
-console.log('✅ Lệnh Slash /config-verify đầy đủ 10 subcommand quản trị & Dashboard Component v2!');
+console.log('✅ Lệnh Slash /config-verify đầy đủ 12 subcommand quản trị & Dashboard Component v2!');
 
 console.log('🎉 TẤT CẢ CÁC KIỂM THỬ ĐÃ VƯỢT QUA!');
