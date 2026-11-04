@@ -1,12 +1,13 @@
+const { PermissionFlagsBits } = require('discord.js');
 const { createReviewCard, createLogEmbed, createVerifyMessage, createDashboard } = require('../utils/embeds');
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 
 /**
  * Lấy giá trị an toàn từ Modal (không throw lỗi nếu trường không tồn tại)
  */
-function getFieldValue(interaction, customId) {
+function getFieldValue(interaction, fieldId) {
   try {
-    return interaction.fields.getTextInputValue(customId)?.trim() ?? '';
+    return interaction.fields.getTextInputValue(fieldId)?.trim() ?? '';
   } catch {
     return null;
   }
@@ -18,8 +19,10 @@ function getFieldValue(interaction, customId) {
  * @param {object} config 
  */
 async function handleModalSubmit(interaction, config) {
+  const { customId, member, guild } = interaction;
+
   // 1. Xử lý khi Admin nộp Modal chỉnh sửa nội dung bảng xác minh
-  if (interaction.customId === 'modal_edit_content') {
+  if (customId === 'modal_edit_content') {
     const title = getFieldValue(interaction, 'edit_title');
     const description = getFieldValue(interaction, 'edit_description');
     const buttonLabel = getFieldValue(interaction, 'edit_button_label');
@@ -51,7 +54,7 @@ async function handleModalSubmit(interaction, config) {
   }
 
   // 2. Xử lý khi Admin nộp Modal chỉnh sửa câu hỏi & đáp án
-  if (interaction.customId === 'modal_edit_questions') {
+  if (customId === 'modal_edit_questions') {
     const q1Text = getFieldValue(interaction, 'q1_text') || '';
     const q1Ans = getFieldValue(interaction, 'q1_ans') || '';
     const q2Text = getFieldValue(interaction, 'q2_text') || '';
@@ -115,9 +118,8 @@ async function handleModalSubmit(interaction, config) {
   }
 
   // 4. Xử lý khi thành viên nộp câu hỏi xác minh
-  if (interaction.customId !== 'modal_verify') return;
+  if (customId !== 'modal_verify') return;
 
-  const { member, guild } = interaction;
   const questions = config.questions || [];
 
   // Thu thập câu trả lời
