@@ -14,7 +14,21 @@ assert('removeRoleId' in config, 'config phải hỗ trợ trường removeRoleI
 assert('divider' in config.embed, 'config.embed phải hỗ trợ trường divider (duong_ke)');
 assert('buttonLabel' in config.embed, 'config.embed phải hỗ trợ buttonLabel');
 assert('secondButton' in config.embed, 'config.embed phải hỗ trợ secondButton');
-console.log('✅ loadConfig() chuẩn hóa cấu hình thành công!');
+
+// Kiểm tra hỗ trợ câu hỏi dài (> 45 ký tự)
+const longQ = 'Bạn có cam kết tuân thủ toàn bộ nội quy và quy định xử phạt của server này một cách nghiêm túc không?';
+const testLongConfig = JSON.parse(JSON.stringify(getRawConfig()));
+testLongConfig.danh_sach_cau_hoi = [{ cau_hoi: longQ, dap_an: 'dong y' }];
+saveRawConfig(testLongConfig);
+const loadedLong = loadConfig();
+assert(loadedLong.questions[0].question === longQ, 'q.question phải lưu toàn bộ câu hỏi dài');
+assert(loadedLong.questions[0].label.length <= 45, 'q.label phải <= 45 ký tự để tránh lỗi Discord Modal');
+assert(loadedLong.questions[0].placeholder.length <= 100, 'q.placeholder phải <= 100 ký tự');
+// Khôi phục
+testLongConfig.danh_sach_cau_hoi = config.questions.map(q => ({ cau_hoi: q.question || q.label, dap_an: q.correctAnswers.join(', ') }));
+saveRawConfig(testLongConfig);
+
+console.log('✅ loadConfig() chuẩn hóa cấu hình & hỗ trợ câu hỏi dài thành công!');
 
 // 2. Kiểm tra hàm tạo Embed & Component V2 xác minh
 const { embed, row, v2Payload, classicPayload } = createVerifyMessage(config);

@@ -113,10 +113,22 @@ function loadConfig() {
       correctAnswers = rawAnswers.split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
     }
 
+    // Nhãn cho Discord Modal (tối đa 45 ký tự theo quy định của Discord)
+    let modalLabel = String(questionText);
+    if (modalLabel.length > 45) {
+      modalLabel = modalLabel.slice(0, 42) + '...';
+    }
+
+    // Placeholder: nếu câu hỏi dài hơn 45 ký tự, hiển thị toàn bộ nội dung câu hỏi (tối đa 100 ký tự)
+    const defaultPlaceholder = String(questionText).length > 45
+      ? String(questionText).slice(0, 100)
+      : (q.placeholder || q.goi_y || 'Nhập câu trả lời của bạn...');
+
     return {
       id: q.id || `q_${idx + 1}`,
-      label: String(questionText).slice(0, 45),
-      placeholder: q.placeholder || q.goi_y || 'Nhập câu trả lời của bạn...',
+      question: String(questionText), // Giữ nguyên toàn bộ câu hỏi dài
+      label: modalLabel,
+      placeholder: defaultPlaceholder,
       style: q.style || (correctAnswers.length > 0 ? 'Short' : 'Paragraph'),
       required: q.required !== false,
       minLength: q.minLength || 1,

@@ -179,6 +179,7 @@ async function handleModalSubmit(interaction, config) {
     const value = getFieldValue(interaction, `question_${q.id}`) || '';
     answers.push({
       id: q.id,
+      question: q.question || q.cau_hoi || q.label,
       label: q.label,
       value: value
     });

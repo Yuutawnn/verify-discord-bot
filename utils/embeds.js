@@ -159,8 +159,9 @@ function createReviewCard(member, answers) {
     );
 
   answers.forEach((ans, index) => {
+    const qTitle = (ans.question || ans.label || `Câu hỏi ${index + 1}`).slice(0, 240);
     embed.addFields({
-      name: `❓ Câu hỏi ${index + 1}: ${ans.label}`,
+      name: `❓ Câu hỏi ${index + 1}: ${qTitle}`,
       value: ans.value ? `\`\`\`${ans.value}\`\`\`` : '*Không có câu trả lời*',
       inline: false
     });
@@ -270,10 +271,11 @@ function createDashboard(guild, config) {
     });
   } else {
     const questionLines = config.questions.map((q, idx) => {
+      const qText = q.question || q.cau_hoi || q.label || `Câu hỏi ${idx + 1}`;
       const ansText = q.correctAnswers && q.correctAnswers.length > 0
         ? `\`${q.correctAnswers.join(', ')}\``
         : '*Không chấm điểm (Khảo sát/Admin đọc)*';
-      return `**${idx + 1}.** ${q.label}\n👉 Đáp án: ${ansText}`;
+      return `**${idx + 1}.** ${qText}\n👉 Đáp án: ${ansText}`;
     });
 
     embed.addFields({

@@ -174,8 +174,8 @@ module.exports = {
         .addStringOption(opt =>
           opt
             .setName('cau-hoi')
-            .setDescription('Nội dung câu hỏi muốn hỏi (tối đa 45 ký tự)')
-            .setMaxLength(45)
+            .setDescription('Nội dung câu hỏi muốn hỏi (tối đa 300 ký tự)')
+            .setMaxLength(300)
             .setRequired(true)
         )
         .addStringOption(opt =>

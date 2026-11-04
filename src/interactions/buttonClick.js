@@ -44,13 +44,17 @@ async function handleButtonClick(interaction, config) {
     }
 
     const rows = questions.map((q) => {
+      const rawText = q.question || q.cau_hoi || q.label || '';
+      const displayLabel = rawText.length > 45 ? rawText.slice(0, 42) + '...' : rawText;
+      const displayPlaceholder = rawText.length > 45 ? rawText.slice(0, 100) : (q.placeholder || 'Nhập câu trả lời của bạn...');
+
       const textInput = new TextInputBuilder()
         .setCustomId(`question_${q.id}`)
-        .setLabel(q.label.slice(0, 45))
+        .setLabel(displayLabel.slice(0, 45))
+        .setPlaceholder(displayPlaceholder.slice(0, 100))
         .setStyle(q.style === 'Paragraph' ? TextInputStyle.Paragraph : TextInputStyle.Short)
         .setRequired(q.required !== false);
 
-      if (q.placeholder) textInput.setPlaceholder(q.placeholder.slice(0, 100));
       if (q.minLength) textInput.setMinLength(q.minLength);
       if (q.maxLength) textInput.setMaxLength(q.maxLength);
 
@@ -317,31 +321,33 @@ async function handleButtonClick(interaction, config) {
 
     const q1Text = new TextInputBuilder()
       .setCustomId('q1_text')
-      .setLabel('Câu hỏi 1 (Tối đa 45 ký tự)')
-      .setStyle(TextInputStyle.Short)
-      .setValue((q1.label || '').slice(0, 45))
+      .setLabel('Nội dung câu hỏi 1 (Tối đa 300 ký tự)'.slice(0, 45))
+      .setStyle(TextInputStyle.Paragraph)
+      .setValue((q1.question || q1.cau_hoi || q1.label || '').slice(0, 300))
+      .setPlaceholder('Nhập nội dung câu hỏi 1 (hỗ trợ câu hỏi dài)...')
       .setRequired(true);
 
     const q1Ans = new TextInputBuilder()
       .setCustomId('q1_ans')
       .setLabel('Đáp án đúng câu 1 (cách nhau dấu phẩy)')
       .setStyle(TextInputStyle.Short)
-      .setValue((q1.correctAnswers ? q1.correctAnswers.join(', ') : '').slice(0, 100))
+      .setValue((q1.correctAnswers ? q1.correctAnswers.join(', ') : '').slice(0, 150))
       .setPlaceholder('VD: dong y, agree, pass123')
       .setRequired(false);
 
     const q2Text = new TextInputBuilder()
       .setCustomId('q2_text')
-      .setLabel('Câu hỏi 2 (Tùy chọn, tối đa 45 ký tự)')
-      .setStyle(TextInputStyle.Short)
-      .setValue((q2.label || '').slice(0, 45))
+      .setLabel('Nội dung câu hỏi 2 (Tùy chọn, tối đa 300 kt)'.slice(0, 45))
+      .setStyle(TextInputStyle.Paragraph)
+      .setValue((q2.question || q2.cau_hoi || q2.label || '').slice(0, 300))
+      .setPlaceholder('Nhập nội dung câu hỏi 2 (hoặc bỏ trống)...')
       .setRequired(false);
 
     const q2Ans = new TextInputBuilder()
       .setCustomId('q2_ans')
       .setLabel('Đáp án đúng câu 2 (bỏ trống = khảo sát)')
       .setStyle(TextInputStyle.Short)
-      .setValue((q2.correctAnswers ? q2.correctAnswers.join(', ') : '').slice(0, 100))
+      .setValue((q2.correctAnswers ? q2.correctAnswers.join(', ') : '').slice(0, 150))
       .setPlaceholder('Bỏ trống nếu không cần chấm điểm')
       .setRequired(false);
 
