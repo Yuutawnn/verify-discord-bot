@@ -1,0 +1,15 @@
+{
+  "role_id": "DÁN_ID_ROLE_THÀNH_VIÊN_VÀO_ĐÂY",
+  "che_do": "TU_DONG",
+  "danh_sach_cau_hoi": [
+    {
+      "cau_hoi": "Mật khẩu xác minh trong nội quy là gì?",
+      "dap_an": "dong y, đồng ý, pass123"
+    },
+    {
+      "cau_hoi": "Bạn biết đến server từ đâu?",
+      "dap_an": ""
+    }
+  ],
+  "kenh_admin_duyet": ""
+}
