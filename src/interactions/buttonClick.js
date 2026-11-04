@@ -77,22 +77,22 @@ async function handleButtonClick(interaction, config) {
 
     const titleInput = new TextInputBuilder()
       .setCustomId('edit_title')
-      .setLabel('Tiêu đề bảng xác minh')
+      .setLabel('Tiêu đề bảng xác minh'.slice(0, 45))
       .setStyle(TextInputStyle.Short)
       .setValue((config.embed.title || '🛡️ XÁC MINH THÀNH VIÊN').slice(0, 100))
       .setRequired(true);
 
     const descInput = new TextInputBuilder()
       .setCustomId('edit_description')
-      .setLabel('Nội dung (Nhấn Enter để xuống dòng)')
+      .setLabel('Nội dung (Nhấn Enter xuống dòng)'.slice(0, 45))
       .setStyle(TextInputStyle.Paragraph)
       .setValue((config.embed.description || '').slice(0, 2000))
-      .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
+      .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng!')
       .setRequired(true);
 
     const imageInput = new TextInputBuilder()
       .setCustomId('edit_image')
-      .setLabel('Link ảnh Banner lớn (URL ảnh .png/.jpg)')
+      .setLabel('Link ảnh Banner lớn (.png/.jpg)'.slice(0, 45))
       .setStyle(TextInputStyle.Short)
       .setValue((config.embed.image || '').slice(0, 400))
       .setPlaceholder('https://example.com/banner.png')
@@ -100,7 +100,7 @@ async function handleButtonClick(interaction, config) {
 
     const thumbInput = new TextInputBuilder()
       .setCustomId('edit_thumbnail')
-      .setLabel('Link ảnh Logo nhỏ góc phải (URL ảnh)')
+      .setLabel('Link ảnh Logo nhỏ góc phải'.slice(0, 45))
       .setStyle(TextInputStyle.Short)
       .setValue((config.embed.thumbnail || '').slice(0, 400))
       .setPlaceholder('https://example.com/logo.png')
@@ -108,7 +108,7 @@ async function handleButtonClick(interaction, config) {
 
     const footerInput = new TextInputBuilder()
       .setCustomId('edit_footer')
-      .setLabel('Chữ chân trang (Footer - Bỏ trống nếu không dùng)')
+      .setLabel('Chân trang / Footer (Tùy chọn)'.slice(0, 45))
       .setStyle(TextInputStyle.Short)
       .setValue((config.embed.footer || '').slice(0, 200))
       .setPlaceholder('VD: Ares Store | discord.gg/aresstore')

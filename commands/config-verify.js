@@ -212,29 +212,22 @@ module.exports = {
 
       const titleInput = new TextInputBuilder()
         .setCustomId('edit_title')
-        .setLabel('Tiêu đề bảng xác minh')
+        .setLabel('Tiêu đề bảng xác minh'.slice(0, 45))
         .setStyle(TextInputStyle.Short)
         .setValue((current.embed.title || '🛡️ XÁC MINH THÀNH VIÊN').slice(0, 100))
         .setRequired(true);
 
       const descInput = new TextInputBuilder()
         .setCustomId('edit_description')
-        .setLabel('Nội dung (Nhấn Enter để xuống dòng)')
+        .setLabel('Nội dung (Nhấn Enter xuống dòng)'.slice(0, 45))
         .setStyle(TextInputStyle.Paragraph)
         .setValue((current.embed.description || '').slice(0, 2000))
-        .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
+        .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng!')
         .setRequired(true);
-
-      const btnInput = new TextInputBuilder()
-        .setCustomId('edit_button_label')
-        .setLabel('Chữ hiển thị trên nút bấm')
-        .setStyle(TextInputStyle.Short)
-        .setValue((current.embed.buttonLabel || 'Bắt đầu xác minh').slice(0, 50))
-        .setRequired(false);
 
       const imageInput = new TextInputBuilder()
         .setCustomId('edit_image')
-        .setLabel('Link ảnh Banner lớn (Dán URL ảnh .png/.jpg)')
+        .setLabel('Link ảnh Banner lớn (.png/.jpg)'.slice(0, 45))
         .setStyle(TextInputStyle.Short)
         .setValue((current.embed.image || '').slice(0, 400))
         .setPlaceholder('https://example.com/banner.png')
@@ -242,18 +235,26 @@ module.exports = {
 
       const thumbInput = new TextInputBuilder()
         .setCustomId('edit_thumbnail')
-        .setLabel('Link ảnh Logo nhỏ góc phải (URL ảnh)')
+        .setLabel('Link ảnh Logo nhỏ góc phải'.slice(0, 45))
         .setStyle(TextInputStyle.Short)
         .setValue((current.embed.thumbnail || '').slice(0, 400))
         .setPlaceholder('https://example.com/logo.png')
         .setRequired(false);
 
+      const footerInput = new TextInputBuilder()
+        .setCustomId('edit_footer')
+        .setLabel('Chân trang / Footer (Tùy chọn)'.slice(0, 45))
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed.footer || '').slice(0, 200))
+        .setPlaceholder('VD: Ares Store | discord.gg/aresstore')
+        .setRequired(false);
+
       modal.addComponents(
         new ActionRowBuilder().addComponents(titleInput),
         new ActionRowBuilder().addComponents(descInput),
-        new ActionRowBuilder().addComponents(btnInput),
         new ActionRowBuilder().addComponents(imageInput),
-        new ActionRowBuilder().addComponents(thumbInput)
+        new ActionRowBuilder().addComponents(thumbInput),
+        new ActionRowBuilder().addComponents(footerInput)
       );
 
       return interaction.showModal(modal);
