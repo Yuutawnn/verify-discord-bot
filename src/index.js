@@ -6,7 +6,6 @@ const {
   GatewayIntentBits,
   Collection,
   Events,
-  ActivityType,
   REST,
   Routes
 } = require('discord.js');
@@ -49,11 +48,6 @@ client.once(Events.ClientReady, async (readyClient) => {
   console.log(`🛡️ Chế độ xác minh hiện tại: [${config.mode || 'AUTO'}]`);
   console.log(`🌐 Đang phục vụ trên ${readyClient.guilds.cache.size} server`);
   console.log('----------------------------------------------------');
-
-  readyClient.user.setPresence({
-    activities: [{ name: 'bảo vệ server | /setup-verify', type: ActivityType.Custom }],
-    status: 'online'
-  });
 
   // Tự động đăng ký/cập nhật Slash Command lên Discord khi bot online
   try {
