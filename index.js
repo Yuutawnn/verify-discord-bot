@@ -6,7 +6,9 @@ const {
   GatewayIntentBits,
   Collection,
   Events,
-  ActivityType
+  ActivityType,
+  REST,
+  Routes
 } = require('discord.js');
 
 // Xác định đường dẫn tương đối (hỗ trợ cả khi chạy từ thư mục gốc hoặc thư mục src)
@@ -47,7 +49,7 @@ if (fs.existsSync(commandsDir)) {
 }
 
 // Khi bot sẵn sàng hoạt động
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
   console.log('----------------------------------------------------');
   console.log(`🤖 Bot đã online với tên: ${readyClient.user.tag}`);
   console.log(`🛡️ Chế độ xác minh hiện tại: [${config.mode || 'AUTO'}]`);
@@ -58,6 +60,34 @@ client.once(Events.ClientReady, (readyClient) => {
     activities: [{ name: 'bảo vệ server | /setup-verify', type: ActivityType.Custom }],
     status: 'online'
   });
+
+  // Tự động đăng ký/cập nhật Slash Command lên Discord khi bot online
+  try {
+    const token = process.env.DISCORD_TOKEN;
+    if (token && client.commands.size > 0) {
+      const rest = new REST({ version: '10' }).setToken(token);
+      const commandData = client.commands.map(cmd => cmd.data.toJSON());
+
+      if (process.env.GUILD_ID) {
+        await rest.put(
+          Routes.applicationGuildCommands(readyClient.user.id, process.env.GUILD_ID),
+          { body: commandData }
+        );
+        console.log(`⚡ Đã tự động kích hoạt ${commandData.length} Slash Command cho Server (${process.env.GUILD_ID})!`);
+      } else {
+        // Tự động cập nhật tức thì cho mọi server bot tham gia
+        for (const [gId, guild] of readyClient.guilds.cache) {
+          await rest.put(
+            Routes.applicationGuildCommands(readyClient.user.id, gId),
+            { body: commandData }
+          );
+          console.log(`⚡ Đã tự động kích hoạt Slash Command cho Server: ${guild.name} (${gId})!`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('⚠️ Không thể tự động đăng ký Slash Command:', err.message);
+  }
 });
 
 // Xử lý các tương tác (Slash Commands, Buttons, Modals)
