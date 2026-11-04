@@ -1,4 +1,5 @@
-const { createReviewCard, createLogEmbed } = require('../utils/embeds');
+const { createReviewCard, createLogEmbed, createVerifyMessage } = require('../utils/embeds');
+const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 
 /**
  * Xử lý khi người dùng submit Modal xác minh
@@ -6,6 +7,37 @@ const { createReviewCard, createLogEmbed } = require('../utils/embeds');
  * @param {object} config 
  */
 async function handleModalSubmit(interaction, config) {
+  // 1. Xử lý khi Admin nộp Modal chỉnh sửa nội dung bảng xác minh
+  if (interaction.customId === 'modal_edit_content') {
+    const title = interaction.fields.getTextInputValue('edit_title')?.trim();
+    const description = interaction.fields.getTextInputValue('edit_description')?.trim();
+    const buttonLabel = interaction.fields.getTextInputValue('edit_button_label')?.trim();
+    const image = interaction.fields.getTextInputValue('edit_image')?.trim();
+    const thumbnail = interaction.fields.getTextInputValue('edit_thumbnail')?.trim();
+
+    const raw = getRawConfig();
+    if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
+
+    if (title) raw.embed.title = title;
+    if (description) raw.embed.description = description;
+    if (buttonLabel) raw.embed.buttonLabel = buttonLabel;
+    raw.embed.image = image || '';
+    raw.embed.thumbnail = thumbnail || '';
+
+    saveRawConfig(raw);
+
+    const currentConfig = loadConfig();
+    const { embed, row } = createVerifyMessage(currentConfig);
+
+    return interaction.reply({
+      content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Để cập nhật bảng hiển thị trong kênh chat, Admin chỉ cần gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
+      embeds: [embed],
+      components: [row],
+      ephemeral: true
+    });
+  }
+
+  // 2. Xử lý khi thành viên nộp câu hỏi xác minh
   if (interaction.customId !== 'modal_verify') return;
 
   const { member, guild } = interaction;

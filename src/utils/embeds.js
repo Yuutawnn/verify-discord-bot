@@ -13,6 +13,13 @@ function createVerifyMessage(config) {
     .setFooter({ text: 'Hệ thống xác minh tự động' })
     .setTimestamp();
 
+  if (config.embed?.image) {
+    embed.setImage(config.embed.image);
+  }
+  if (config.embed?.thumbnail) {
+    embed.setThumbnail(config.embed.thumbnail);
+  }
+
   const button = new ButtonBuilder()
     .setCustomId('btn_start_verify')
     .setLabel(config.embed.buttonLabel || 'Bắt đầu xác minh')

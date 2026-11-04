@@ -93,7 +93,8 @@ Nếu các Admin khác **không có quyền truy cập vào VPS / máy tính ch�
 | :--- | :--- | :--- |
 | `/config-verify xem` | Xem toàn bộ cấu hình hiện tại (Role, chế độ, danh sách câu hỏi) | `/config-verify xem` |
 | `/config-verify role` | Đổi Role sẽ cấp sau khi verify | `/config-verify role vai-tro:@Member` |
-| `/config-verify noi-dung` | Đổi tiêu đề, lời chào, chữ trên nút bấm, màu sắc | `/config-verify noi-dung tieu-de:Xác Minh Server mo-ta:Hãy bấm nút bên dưới` |
+| `/config-verify sua-noi-dung` | **(Khuyên dùng)** Mở popup trực quan: Nhấn phím Enter xuống dòng, dán link ảnh | `/config-verify sua-noi-dung` |
+| `/config-verify noi-dung` | Chỉnh nhanh tiêu đề, mô tả, ảnh banner, màu sắc | `/config-verify noi-dung anh-banner:https://...` |
 | `/config-verify che-do` | Đổi qua lại giữa Tự động và Admin duyệt | `/config-verify che-do loai:TU_DONG` |
 | `/config-verify kenh-duyet` | Đổi kênh nhận phiếu duyệt xác minh | `/config-verify kenh-duyet kenh:#duyet-thanh-vien` |
 | `/config-verify dat-cau-hoi` | Thêm hoặc sửa câu hỏi từ 1 đến 5 | `/config-verify dat-cau-hoi so-thu-tu:1 cau-hoi:Mật khẩu là gì? dap-an:dong y, 123` |

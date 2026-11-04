@@ -46,13 +46,23 @@ function loadConfig() {
   const logChannelId = raw.kenh_log || raw.logChannelId || '';
 
   // 4. Chuẩn hóa Embed & Nút bấm
+  let desc = raw.embed?.description ?? raw.loi_chao ?? raw.mo_ta;
+  if (Array.isArray(desc)) {
+    desc = desc.join('\n');
+  } else if (typeof desc === 'string') {
+    desc = desc.replace(/\\n/g, '\n');
+  } else {
+    desc = 'Chào mừng bạn đến với server!\n\nĐể mở khóa các kênh và trò chuyện cùng mọi người, vui lòng bấm nút **Bắt đầu xác minh** bên dưới và trả lời câu hỏi xác thực.';
+  }
+
   const embed = {
     title: raw.embed?.title || raw.tieu_de || '🛡️ XÁC MINH THÀNH VIÊN',
-    description: raw.embed?.description || raw.loi_chao || 
-      'Chào mừng bạn đến với server!\n\nĐể mở khóa các kênh và trò chuyện cùng mọi người, vui lòng bấm nút **Bắt đầu xác minh** bên dưới và trả lời câu hỏi xác thực.',
+    description: desc,
     color: raw.embed?.color || raw.mau_sac || '#5865F2',
-    buttonLabel: raw.embed?.buttonLabel || raw.chu_nut_bam || 'Bắt đầu xác minh',
-    buttonEmoji: raw.embed?.buttonEmoji || raw.icon_nut || '✅'
+    buttonLabel: raw.embed?.buttonLabel || raw.chu_nut_bam || raw.chu_nut || 'Bắt đầu xác minh',
+    buttonEmoji: raw.embed?.buttonEmoji || raw.icon_nut || '✅',
+    image: raw.embed?.image || raw.anh_banner || raw.anh || '',
+    thumbnail: raw.embed?.thumbnail || raw.anh_nho || raw.logo || ''
   };
 
   // 5. Chuẩn hóa Danh sách câu hỏi

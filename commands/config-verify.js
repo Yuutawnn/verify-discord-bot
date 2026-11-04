@@ -2,7 +2,11 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ChannelType,
-  EmbedBuilder
+  EmbedBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder
 } = require('discord.js');
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 const { createVerifyMessage } = require('../utils/embeds');
@@ -18,7 +22,13 @@ module.exports = {
         .setName('xem')
         .setDescription('Xem các thiết lập xác minh hiện tại của server')
     )
-    // 2. Đặt Role xác minh
+    // 2. Mở Popup Modal để sửa nội dung (Xuống dòng tự nhiên bằng phím Enter)
+    .addSubcommand(sub =>
+      sub
+        .setName('sua-noi-dung')
+        .setDescription('Mở hộp thoại chỉnh sửa trực quan (Nhấn phím Enter xuống dòng, thêm link ảnh)')
+    )
+    // 3. Đặt Role xác minh
     .addSubcommand(sub =>
       sub
         .setName('role')
@@ -30,7 +40,7 @@ module.exports = {
             .setRequired(true)
         )
     )
-    // 3. Đổi chế độ xác minh
+    // 4. Đổi chế độ xác minh
     .addSubcommand(sub =>
       sub
         .setName('che-do')
@@ -46,7 +56,7 @@ module.exports = {
             )
         )
     )
-    // 4. Đặt kênh duyệt cho Admin
+    // 5. Đặt kênh duyệt cho Admin
     .addSubcommand(sub =>
       sub
         .setName('kenh-duyet')
@@ -59,11 +69,11 @@ module.exports = {
             .setRequired(true)
         )
     )
-    // 5. Chỉnh sửa nội dung tin nhắn bảng xác minh
+    // 6. Chỉnh sửa nhanh bằng option (Thêm link ảnh Banner, ảnh Logo)
     .addSubcommand(sub =>
       sub
         .setName('noi-dung')
-        .setDescription('Chỉnh sửa tiêu đề, mô tả, nút bấm của bảng xác minh')
+        .setDescription('Chỉnh sửa nhanh tiêu đề, mô tả, ảnh banner hoặc màu sắc')
         .addStringOption(opt =>
           opt
             .setName('tieu-de')
@@ -74,8 +84,20 @@ module.exports = {
         .addStringOption(opt =>
           opt
             .setName('mo-ta')
-            .setDescription('Nội dung hướng dẫn xác minh (Dùng \\n để xuống dòng)')
+            .setDescription('Mô tả/lời chào (Dùng Enter, \\n hoặc dấu | để xuống dòng)')
             .setMaxLength(2000)
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('anh-banner')
+            .setDescription('Link URL ảnh Banner lớn nằm ở dưới (VD: https://.../banner.png)')
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('anh-nho')
+            .setDescription('Link URL ảnh Logo nhỏ ở góc phải (VD: https://.../logo.png)')
             .setRequired(false)
         )
         .addStringOption(opt =>
@@ -100,7 +122,7 @@ module.exports = {
             .setRequired(false)
         )
     )
-    // 6. Thêm/Sửa câu hỏi
+    // 7. Thêm/Sửa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('dat-cau-hoi')
@@ -127,7 +149,7 @@ module.exports = {
             .setRequired(false)
         )
     )
-    // 7. Xóa câu hỏi
+    // 8. Xóa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('xoa-cau-hoi')
@@ -156,7 +178,6 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const raw = getRawConfig();
 
-    // Đảm bảo các thuộc tính cốt lõi luôn tồn tại
     if (!raw.danh_sach_cau_hoi || !Array.isArray(raw.danh_sach_cau_hoi)) {
       raw.danh_sach_cau_hoi = [];
     }
@@ -189,12 +210,11 @@ module.exports = {
           { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true },
           { 
             name: '📝 Nội dung bảng xác minh', 
-            value: `**Tiêu đề:** ${normalized.embed.title}\n**Nút bấm:** ${normalized.embed.buttonEmoji} ${normalized.embed.buttonLabel}\n*(Dùng \`/config-verify noi-dung\` để chỉnh sửa)*`, 
+            value: `**Tiêu đề:** ${normalized.embed.title}\n**Nút bấm:** ${normalized.embed.buttonEmoji} ${normalized.embed.buttonLabel}\n**Ảnh Banner:** ${normalized.embed.image ? `[Xem ảnh](${normalized.embed.image})` : '*Chưa có*'}\n*(Dùng \`/config-verify sua-noi-dung\` để chỉnh sửa trực quan)*`, 
             inline: false 
           }
         );
 
-      // Hiển thị danh sách câu hỏi
       if (normalized.questions.length === 0) {
         embed.addFields({
           name: '❓ Danh sách câu hỏi',
@@ -218,7 +238,63 @@ module.exports = {
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    // --- 2. LỆNH ĐẶT ROLE ---
+    // --- 2. LỆNH MỞ POPUP SỬA NỘI DUNG (NHẤN ENTER XUỐNG DÒNG) ---
+    if (sub === 'sua-noi-dung') {
+      const current = loadConfig();
+      const modal = new ModalBuilder()
+        .setCustomId('modal_edit_content')
+        .setTitle('Sửa Bảng Xác Minh (Enter xuống dòng)');
+
+      const titleInput = new TextInputBuilder()
+        .setCustomId('edit_title')
+        .setLabel('Tiêu đề bảng xác minh')
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed.title || '🛡️ XÁC MINH THÀNH VIÊN').slice(0, 100))
+        .setRequired(true);
+
+      const descInput = new TextInputBuilder()
+        .setCustomId('edit_description')
+        .setLabel('Nội dung (Nhấn Enter để xuống dòng)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue((current.embed.description || '').slice(0, 2000))
+        .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
+        .setRequired(true);
+
+      const btnInput = new TextInputBuilder()
+        .setCustomId('edit_button_label')
+        .setLabel('Chữ hiển thị trên nút bấm')
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed.buttonLabel || 'Bắt đầu xác minh').slice(0, 50))
+        .setRequired(false);
+
+      const imageInput = new TextInputBuilder()
+        .setCustomId('edit_image')
+        .setLabel('Link ảnh Banner lớn (Dán URL ảnh .png/.jpg)')
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed.image || '').slice(0, 400))
+        .setPlaceholder('https://example.com/banner.png')
+        .setRequired(false);
+
+      const thumbInput = new TextInputBuilder()
+        .setCustomId('edit_thumbnail')
+        .setLabel('Link ảnh Logo nhỏ góc phải (URL ảnh)')
+        .setStyle(TextInputStyle.Short)
+        .setValue((current.embed.thumbnail || '').slice(0, 400))
+        .setPlaceholder('https://example.com/logo.png')
+        .setRequired(false);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(titleInput),
+        new ActionRowBuilder().addComponents(descInput),
+        new ActionRowBuilder().addComponents(btnInput),
+        new ActionRowBuilder().addComponents(imageInput),
+        new ActionRowBuilder().addComponents(thumbInput)
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // --- 3. LỆNH ĐẶT ROLE ---
     if (sub === 'role') {
       const selectedRole = interaction.options.getRole('vai-tro');
 
@@ -239,7 +315,7 @@ module.exports = {
       });
     }
 
-    // --- 3. LỆNH ĐỔI CHẾ ĐỘ ---
+    // --- 4. LỆNH ĐỔI CHẾ ĐỘ ---
     if (sub === 'che-do') {
       const mode = interaction.options.getString('loai');
       raw.che_do = mode;
@@ -255,7 +331,7 @@ module.exports = {
       });
     }
 
-    // --- 4. LỆNH ĐẶT KÊNH DUYỆT ---
+    // --- 5. LỆNH ĐẶT KÊNH DUYỆT ---
     if (sub === 'kenh-duyet') {
       const channel = interaction.options.getChannel('kenh');
       raw.kenh_admin_duyet = channel.id;
@@ -267,23 +343,30 @@ module.exports = {
       });
     }
 
-    // --- 5. LỆNH CHỈNH NỘI DUNG BẢNG VERIFY ---
+    // --- 6. LỆNH CHỈNH NHANH NỘI DUNG QUA OPTION ---
     if (sub === 'noi-dung') {
       const title = interaction.options.getString('tieu-de');
-      const description = interaction.options.getString('mo-ta');
+      let description = interaction.options.getString('mo-ta');
+      const banner = interaction.options.getString('anh-banner');
+      const thumbnail = interaction.options.getString('anh-nho');
       const buttonLabel = interaction.options.getString('chu-nut');
       const buttonEmoji = interaction.options.getString('icon-nut');
       const color = interaction.options.getString('mau-sac');
 
-      if (!title && !description && !buttonLabel && !buttonEmoji && !color) {
+      if (!title && !description && !banner && !thumbnail && !buttonLabel && !buttonEmoji && !color) {
         return interaction.reply({
-          content: '⚠️ Bạn chưa điền nội dung nào cần thay đổi!\n👉 Hãy chọn ít nhất 1 tùy chọn: `tieu-de`, `mo-ta`, `chu-nut`, `icon-nut`, hoặc `mau-sac`.',
+          content: '⚠️ Bạn chưa điền tùy chọn nào!\n👉 Mẹo: Bạn có thể gõ lệnh `/config-verify sua-noi-dung` để mở bảng popup nhấn phím Enter xuống dòng trực tiếp!',
           ephemeral: true
         });
       }
 
       if (title) raw.embed.title = title;
-      if (description) raw.embed.description = description.replace(/\\n/g, '\n');
+      if (description) {
+        // Hỗ trợ cả phím Enter, \n hoặc dấu | để xuống dòng
+        raw.embed.description = description.replace(/\\n/g, '\n').replace(/\|/g, '\n');
+      }
+      if (banner !== null) raw.embed.image = banner;
+      if (thumbnail !== null) raw.embed.thumbnail = thumbnail;
       if (buttonLabel) raw.embed.buttonLabel = buttonLabel;
       if (buttonEmoji) raw.embed.buttonEmoji = buttonEmoji;
       if (color) {
@@ -299,19 +382,18 @@ module.exports = {
 
       saveRawConfig(raw);
 
-      // Tạo giao diện xem trước
       const currentConfig = loadConfig();
       const { embed: previewEmbed, row: previewRow } = createVerifyMessage(currentConfig);
 
       return interaction.reply({
-        content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Nếu muốn cập nhật lại bảng xác minh trong kênh chat, Admin chỉ cần gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
+        content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Nếu muốn cập nhật bảng xác minh trong kênh chat, Admin gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
         embeds: [previewEmbed],
         components: [previewRow],
         ephemeral: true
       });
     }
 
-    // --- 6. LỆNH THÊM / SỬA CÂU HỎI ---
+    // --- 7. LỆNH THÊM / SỬA CÂU HỎI ---
     if (sub === 'dat-cau-hoi') {
       const index = interaction.options.getInteger('so-thu-tu') - 1;
       const questionText = interaction.options.getString('cau-hoi').trim();
@@ -337,7 +419,7 @@ module.exports = {
       });
     }
 
-    // --- 7. LỆNH XÓA CÂU HỎI ---
+    // --- 8. LỆNH XÓA CÂU HỎI ---
     if (sub === 'xoa-cau-hoi') {
       const index = interaction.options.getInteger('so-thu-tu') - 1;
 
