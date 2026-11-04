@@ -2,6 +2,17 @@ const { createReviewCard, createLogEmbed, createVerifyMessage, createDashboard }
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
 
 /**
+ * Lấy giá trị an toàn từ Modal (không throw lỗi nếu trường không tồn tại)
+ */
+function getFieldValue(interaction, customId) {
+  try {
+    return interaction.fields.getTextInputValue(customId)?.trim() ?? '';
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Xử lý khi người dùng submit Modal xác minh
  * @param {import('discord.js').ModalSubmitInteraction} interaction 
  * @param {object} config 
@@ -9,20 +20,22 @@ const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoad
 async function handleModalSubmit(interaction, config) {
   // 1. Xử lý khi Admin nộp Modal chỉnh sửa nội dung bảng xác minh
   if (interaction.customId === 'modal_edit_content') {
-    const title = interaction.fields.getTextInputValue('edit_title')?.trim();
-    const description = interaction.fields.getTextInputValue('edit_description')?.trim();
-    const buttonLabel = interaction.fields.getTextInputValue('edit_button_label')?.trim();
-    const image = interaction.fields.getTextInputValue('edit_image')?.trim();
-    const thumbnail = interaction.fields.getTextInputValue('edit_thumbnail')?.trim();
+    const title = getFieldValue(interaction, 'edit_title');
+    const description = getFieldValue(interaction, 'edit_description');
+    const buttonLabel = getFieldValue(interaction, 'edit_button_label');
+    const image = getFieldValue(interaction, 'edit_image');
+    const thumbnail = getFieldValue(interaction, 'edit_thumbnail');
+    const footer = getFieldValue(interaction, 'edit_footer');
 
     const raw = getRawConfig();
     if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
 
-    if (title) raw.embed.title = title;
-    if (description) raw.embed.description = description;
-    if (buttonLabel) raw.embed.buttonLabel = buttonLabel;
-    raw.embed.image = image || '';
-    raw.embed.thumbnail = thumbnail || '';
+    if (title !== null && title !== '') raw.embed.title = title;
+    if (description !== null && description !== '') raw.embed.description = description;
+    if (buttonLabel !== null && buttonLabel !== '') raw.embed.buttonLabel = buttonLabel;
+    if (image !== null) raw.embed.image = image;
+    if (thumbnail !== null) raw.embed.thumbnail = thumbnail;
+    if (footer !== null) raw.embed.footer = footer;
 
     saveRawConfig(raw);
 
@@ -39,10 +52,10 @@ async function handleModalSubmit(interaction, config) {
 
   // 2. Xử lý khi Admin nộp Modal chỉnh sửa câu hỏi & đáp án
   if (interaction.customId === 'modal_edit_questions') {
-    const q1Text = interaction.fields.getTextInputValue('q1_text')?.trim();
-    const q1Ans = interaction.fields.getTextInputValue('q1_ans')?.trim();
-    const q2Text = interaction.fields.getTextInputValue('q2_text')?.trim();
-    const q2Ans = interaction.fields.getTextInputValue('q2_ans')?.trim();
+    const q1Text = getFieldValue(interaction, 'q1_text') || '';
+    const q1Ans = getFieldValue(interaction, 'q1_ans') || '';
+    const q2Text = getFieldValue(interaction, 'q2_text') || '';
+    const q2Ans = getFieldValue(interaction, 'q2_ans') || '';
 
     const raw = getRawConfig();
     raw.danh_sach_cau_hoi = [];
@@ -73,7 +86,7 @@ async function handleModalSubmit(interaction, config) {
   let allCorrect = true;
 
   for (const q of questions) {
-    const value = interaction.fields.getTextInputValue(`question_${q.id}`) || '';
+    const value = getFieldValue(interaction, `question_${q.id}`) || '';
     answers.push({
       id: q.id,
       label: q.label,
