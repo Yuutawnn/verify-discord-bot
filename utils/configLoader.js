@@ -56,13 +56,15 @@ function loadConfig() {
   }
 
   const embed = {
-    title: raw.embed?.title || raw.tieu_de || '🛡️ XÁC MINH THÀNH VIÊN',
+    title: raw.embed?.title ?? raw.tieu_de ?? '🛡️ XÁC MINH THÀNH VIÊN',
     description: desc,
-    color: raw.embed?.color || raw.mau_sac || '#5865F2',
-    buttonLabel: raw.embed?.buttonLabel || raw.chu_nut_bam || raw.chu_nut || 'Bắt đầu xác minh',
-    buttonEmoji: raw.embed?.buttonEmoji || raw.icon_nut || '✅',
+    color: raw.embed?.color || raw.mau_sac || '#2B2D31',
+    buttonLabel: raw.embed?.buttonLabel || raw.chu_nut_bam || raw.chu_nut || 'Xác minh',
+    buttonEmoji: raw.embed?.buttonEmoji || raw.icon_nut || '🛡️',
+    buttonStyle: raw.embed?.buttonStyle || raw.kieu_nut || raw.mau_nut || 'Secondary',
     image: raw.embed?.image || raw.anh_banner || raw.anh || '',
-    thumbnail: raw.embed?.thumbnail || raw.anh_nho || raw.logo || ''
+    thumbnail: raw.embed?.thumbnail || raw.anh_nho || raw.logo || '',
+    footer: raw.embed?.footer || raw.chan_trang || ''
   };
 
   // 5. Chuẩn hóa Danh sách câu hỏi

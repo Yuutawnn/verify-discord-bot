@@ -90,21 +90,6 @@ async function handleButtonClick(interaction, config) {
       .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
       .setRequired(true);
 
-    const btnInput = new TextInputBuilder()
-      .setCustomId('edit_button_label')
-      .setLabel('Chữ hiển thị trên nút bấm')
-      .setStyle(TextInputStyle.Short)
-      .setValue((config.embed.buttonLabel || 'Bắt đầu xác minh').slice(0, 50))
-      .setRequired(false);
-
-    const imageInput = new TextInputBuilder()
-      .setCustomId('edit_image')
-      .setLabel('Link ảnh Banner lớn (URL ảnh .png/.jpg)')
-      .setStyle(TextInputStyle.Short)
-      .setValue((config.embed.image || '').slice(0, 400))
-      .setPlaceholder('https://example.com/banner.png')
-      .setRequired(false);
-
     const thumbInput = new TextInputBuilder()
       .setCustomId('edit_thumbnail')
       .setLabel('Link ảnh Logo nhỏ góc phải (URL ảnh)')
@@ -113,12 +98,20 @@ async function handleButtonClick(interaction, config) {
       .setPlaceholder('https://example.com/logo.png')
       .setRequired(false);
 
+    const footerInput = new TextInputBuilder()
+      .setCustomId('edit_footer')
+      .setLabel('Chữ chân trang (Footer - Bỏ trống nếu không dùng)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.footer || '').slice(0, 200))
+      .setPlaceholder('VD: Ares Store | discord.gg/aresstore')
+      .setRequired(false);
+
     modal.addComponents(
       new ActionRowBuilder().addComponents(titleInput),
       new ActionRowBuilder().addComponents(descInput),
-      new ActionRowBuilder().addComponents(btnInput),
       new ActionRowBuilder().addComponents(imageInput),
-      new ActionRowBuilder().addComponents(thumbInput)
+      new ActionRowBuilder().addComponents(thumbInput),
+      new ActionRowBuilder().addComponents(footerInput)
     );
 
     return interaction.showModal(modal);
@@ -134,6 +127,29 @@ async function handleButtonClick(interaction, config) {
     const currentMode = String(raw.che_do || raw.mode || '').toUpperCase();
     const newMode = (currentMode === 'ADMIN_DUYET' || currentMode === 'MANUAL_REVIEW') ? 'TU_DONG' : 'ADMIN_DUYET';
     raw.che_do = newMode;
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(guild, newConfig);
+
+    return interaction.update({ embeds: [embed], components });
+  }
+
+  // 4. Đổi màu nút bấm (Xám không màu <-> Xanh lá <-> Xanh dương <-> Đỏ)
+  if (customId === 'btn_cfg_toggle_btn_color') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const raw = getRawConfig();
+    if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
+
+    const colorCycle = ['XAM', 'XANH_LA', 'XANH_DUONG', 'DO'];
+    const currentBtn = String(raw.embed.buttonStyle || raw.kieu_nut || raw.mau_nut || 'XAM').toUpperCase();
+    let nextIdx = (colorCycle.indexOf(currentBtn) + 1) % colorCycle.length;
+    if (nextIdx < 0) nextIdx = 0;
+
+    raw.embed.buttonStyle = colorCycle[nextIdx];
     saveRawConfig(raw);
 
     const newConfig = loadConfig();

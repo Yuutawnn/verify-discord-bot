@@ -90,13 +90,6 @@ async function handleButtonClick(interaction, config) {
       .setPlaceholder('Nhập lời chào & hướng dẫn. Nhấn Enter để xuống dòng thoải mái!')
       .setRequired(true);
 
-    const btnInput = new TextInputBuilder()
-      .setCustomId('edit_button_label')
-      .setLabel('Chữ hiển thị trên nút bấm')
-      .setStyle(TextInputStyle.Short)
-      .setValue((config.embed.buttonLabel || 'Bắt đầu xác minh').slice(0, 50))
-      .setRequired(false);
-
     const imageInput = new TextInputBuilder()
       .setCustomId('edit_image')
       .setLabel('Link ảnh Banner lớn (URL ảnh .png/.jpg)')
@@ -113,12 +106,20 @@ async function handleButtonClick(interaction, config) {
       .setPlaceholder('https://example.com/logo.png')
       .setRequired(false);
 
+    const footerInput = new TextInputBuilder()
+      .setCustomId('edit_footer')
+      .setLabel('Chữ chân trang (Footer - Bỏ trống nếu không dùng)')
+      .setStyle(TextInputStyle.Short)
+      .setValue((config.embed.footer || '').slice(0, 200))
+      .setPlaceholder('VD: Ares Store | discord.gg/aresstore')
+      .setRequired(false);
+
     modal.addComponents(
       new ActionRowBuilder().addComponents(titleInput),
       new ActionRowBuilder().addComponents(descInput),
-      new ActionRowBuilder().addComponents(btnInput),
       new ActionRowBuilder().addComponents(imageInput),
-      new ActionRowBuilder().addComponents(thumbInput)
+      new ActionRowBuilder().addComponents(thumbInput),
+      new ActionRowBuilder().addComponents(footerInput)
     );
 
     return interaction.showModal(modal);
@@ -142,7 +143,30 @@ async function handleButtonClick(interaction, config) {
     return interaction.update({ embeds: [embed], components });
   }
 
-  // 4. Mở Popup sửa câu hỏi & đáp án
+  // 4. Đổi màu nút bấm (Xám không màu <-> Xanh lá <-> Xanh dương <-> Đỏ)
+  if (customId === 'btn_cfg_toggle_btn_color') {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
+    }
+
+    const raw = getRawConfig();
+    if (!raw.embed || typeof raw.embed !== 'object') raw.embed = {};
+
+    const colorCycle = ['XAM', 'XANH_LA', 'XANH_DUONG', 'DO'];
+    const currentBtn = String(raw.embed.buttonStyle || raw.kieu_nut || raw.mau_nut || 'XAM').toUpperCase();
+    let nextIdx = (colorCycle.indexOf(currentBtn) + 1) % colorCycle.length;
+    if (nextIdx < 0) nextIdx = 0;
+
+    raw.embed.buttonStyle = colorCycle[nextIdx];
+    saveRawConfig(raw);
+
+    const newConfig = loadConfig();
+    const { embed, components } = createDashboard(guild, newConfig);
+
+    return interaction.update({ embeds: [embed], components });
+  }
+
+  // 5. Mở Popup sửa câu hỏi & đáp án
   if (customId === 'btn_cfg_edit_questions') {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
@@ -195,7 +219,7 @@ async function handleButtonClick(interaction, config) {
     return interaction.showModal(modal);
   }
 
-  // 5. Gửi bảng xác minh ra kênh chat
+  // 6. Gửi bảng xác minh ra kênh chat
   if (customId === 'btn_cfg_deploy_verify') {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({ content: '❌ Chỉ có Administrator mới có quyền!', ephemeral: true });
@@ -214,7 +238,7 @@ async function handleButtonClick(interaction, config) {
   // C. CÁC NÚT PHÊ DUYỆT / TỪ CHỐI CỦA ADMIN
   // ==========================================
 
-  // 6. Khi Admin bấm nút "Phê duyệt" (Approve)
+  // 7. Khi Admin bấm nút "Phê duyệt" (Approve)
   if (customId.startsWith('btn_approve_')) {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles) &&
         !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -285,7 +309,7 @@ async function handleButtonClick(interaction, config) {
     }
   }
 
-  // 7. Khi Admin bấm nút "Từ chối" (Reject)
+  // 8. Khi Admin bấm nút "Từ chối" (Reject)
   if (customId.startsWith('btn_reject_')) {
     if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles) &&
         !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {

@@ -9,31 +9,50 @@ const {
 } = require('discord.js');
 
 /**
+ * Chuyển đổi tên kiểu nút thành ButtonStyle tương ứng trong Discord
+ * Mặc định là Secondary (Xám / không màu)
+ */
+function getButtonStyle(styleName) {
+  const s = String(styleName || '').toUpperCase();
+  if (s === 'SUCCESS' || s === 'XANH_LA' || s === 'GREEN') return ButtonStyle.Success;
+  if (s === 'PRIMARY' || s === 'XANH_DUONG' || s === 'BLUE') return ButtonStyle.Primary;
+  if (s === 'DANGER' || s === 'DO' || s === 'RED') return ButtonStyle.Danger;
+  return ButtonStyle.Secondary; // Mặc định: Nút xám không màu (neutral)
+}
+
+/**
  * Tạo Embed và Nút bấm cho bảng xác minh chính
  * @param {object} config 
  * @returns {{ embed: EmbedBuilder, row: ActionRowBuilder }}
  */
 function createVerifyMessage(config) {
   const embed = new EmbedBuilder()
-    .setTitle(config.embed.title || '🛡️ XÁC MINH THÀNH VIÊN')
-    .setDescription(config.embed.description || 'Nhấn nút bên dưới để xác minh.')
-    .setColor(config.embed.color || '#5865F2')
-    .setFooter({ text: 'Hệ thống xác minh tự động' })
-    .setTimestamp();
+    .setTitle(config.embed?.title || '🛡️ XÁC MINH THÀNH VIÊN')
+    .setDescription(config.embed?.description || 'Nhấn nút bên dưới để xác minh.')
+    .setColor(config.embed?.color || '#2B2D31'); // Mặc định: Màu tối tiệp nền Discord
 
+  // Ảnh Banner lớn ở giữa
   if (config.embed?.image) {
     embed.setImage(config.embed.image);
   }
+
+  // Ảnh nhỏ Logo góc phải
   if (config.embed?.thumbnail) {
     embed.setThumbnail(config.embed.thumbnail);
   }
 
+  // Chân trang (chỉ hiện khi người dùng tự cấu hình, không còn chữ mặc định)
+  if (config.embed?.footer) {
+    embed.setFooter({ text: config.embed.footer });
+  }
+
+  // Nút bấm: Mặc định xám (không màu), có thể tùy chỉnh
   const button = new ButtonBuilder()
     .setCustomId('btn_start_verify')
-    .setLabel(config.embed.buttonLabel || 'Bắt đầu xác minh')
-    .setStyle(ButtonStyle.Success);
+    .setLabel(config.embed?.buttonLabel || 'Xác minh')
+    .setStyle(getButtonStyle(config.embed?.buttonStyle));
 
-  if (config.embed.buttonEmoji) {
+  if (config.embed?.buttonEmoji) {
     button.setEmoji(config.embed.buttonEmoji);
   }
 
@@ -59,7 +78,6 @@ function createReviewCard(member, answers) {
       { name: 'Ngày tham gia server', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true }
     );
 
-  // Thêm các câu trả lời
   answers.forEach((ans, index) => {
     embed.addFields({
       name: `❓ Câu hỏi ${index + 1}: ${ans.label}`,
@@ -122,24 +140,30 @@ function createDashboard(guild, config) {
     : '⚠️ *Chưa chọn (Dùng menu chọn Role bên dưới)*';
 
   const modeDisplay = config.mode === 'AUTO'
-    ? '🤖 **Tự động (AUTO)** (So khớp từ khóa)'
-    : '👮 **Admin duyệt (MANUAL_REVIEW)** (Bấm nút trên phiếu duyệt)';
+    ? '🤖 **Tự động (AUTO)**'
+    : '👮 **Admin duyệt (MANUAL_REVIEW)**';
 
   const reviewChannelDisplay = config.reviewChannelId
     ? `<#${config.reviewChannelId}>`
     : (config.mode === 'MANUAL_REVIEW' ? '⚠️ *Chưa chọn kênh duyệt!*' : '*Không áp dụng ở chế độ tự động*');
 
+  const btnStyle = String(config.embed?.buttonStyle || 'SECONDARY').toUpperCase();
+  let btnColorText = '🔘 Xám (Không màu - Mặc định)';
+  if (btnStyle === 'SUCCESS' || btnStyle === 'XANH_LA') btnColorText = '🟢 Xanh lá';
+  if (btnStyle === 'PRIMARY' || btnStyle === 'XANH_DUONG') btnColorText = '🔵 Xanh dương';
+  if (btnStyle === 'DANGER' || btnStyle === 'DO') btnColorText = '🔴 Đỏ';
+
   const embed = new EmbedBuilder()
     .setTitle('🛠️ BẢNG ĐIỀU KHIỂN XÁC MINH (CONTROL PANEL)')
     .setDescription('Chọn các menu hoặc nút bấm bên dưới để tùy chỉnh toàn bộ hệ thống xác minh trực tiếp bằng giao diện tương tác.')
-    .setColor(config.embed?.color || '#5865F2')
+    .setColor(config.embed?.color || '#2B2D31')
     .addFields(
       { name: '🎭 Role thành viên sẽ cấp', value: roleDisplay, inline: true },
       { name: '🛡️ Chế độ xác minh', value: modeDisplay, inline: true },
       { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true },
       {
         name: '📝 Nội dung bảng xác minh',
-        value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Nút bấm:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Bắt đầu'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}`,
+        value: `**Tiêu đề:** ${config.embed?.title || 'Chưa đặt'}\n**Kiểu nút:** ${btnColorText}\n**Chữ nút:** ${config.embed?.buttonEmoji || ''} ${config.embed?.buttonLabel || 'Xác minh'}\n**Ảnh Banner:** ${config.embed?.image ? `[Xem ảnh](${config.embed.image})` : '*Chưa có*'}\n**Logo nhỏ:** ${config.embed?.thumbnail ? `[Xem logo](${config.embed.thumbnail})` : '*Chưa có*'}\n**Chân trang:** ${config.embed?.footer || '*Không có*'}`,
         inline: false
       }
     );
@@ -183,34 +207,41 @@ function createDashboard(guild, config) {
     .setMaxValues(1);
   const rowChannel = new ActionRowBuilder().addComponents(channelSelect);
 
-  // Row 3: Các nút chức năng
+  // Row 3: Các nút chức năng (Tối đa 5 nút)
   const btnEditContent = new ButtonBuilder()
     .setCustomId('btn_cfg_edit_content')
-    .setLabel('Sửa Nội Dung & Ảnh')
+    .setLabel('Nội Dung & Ảnh')
     .setStyle(ButtonStyle.Primary)
     .setEmoji('📝');
 
   const btnToggleMode = new ButtonBuilder()
     .setCustomId('btn_cfg_toggle_mode')
-    .setLabel(`Đổi Chế Độ (${config.mode === 'AUTO' ? 'Tự Động' : 'Admin Duyệt'})`)
+    .setLabel(`Chế Độ (${config.mode === 'AUTO' ? 'Tự Động' : 'Duyệt'})`)
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('🛡️');
 
+  const btnToggleColor = new ButtonBuilder()
+    .setCustomId('btn_cfg_toggle_btn_color')
+    .setLabel('Màu Nút')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('🎨');
+
   const btnEditQuestions = new ButtonBuilder()
     .setCustomId('btn_cfg_edit_questions')
-    .setLabel('Sửa Câu Hỏi')
+    .setLabel('Câu Hỏi')
     .setStyle(ButtonStyle.Primary)
     .setEmoji('❓');
 
   const btnDeploy = new ButtonBuilder()
     .setCustomId('btn_cfg_deploy_verify')
-    .setLabel('Gửi Bảng Xác Minh')
+    .setLabel('Gửi Bảng Verify')
     .setStyle(ButtonStyle.Success)
     .setEmoji('🚀');
 
   const rowButtons = new ActionRowBuilder().addComponents(
     btnEditContent,
     btnToggleMode,
+    btnToggleColor,
     btnEditQuestions,
     btnDeploy
   );
@@ -222,5 +253,6 @@ module.exports = {
   createVerifyMessage,
   createReviewCard,
   createLogEmbed,
-  createDashboard
+  createDashboard,
+  getButtonStyle
 };
