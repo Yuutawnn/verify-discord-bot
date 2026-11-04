@@ -246,7 +246,7 @@ module.exports = {
         .setLabel('Chân trang / Footer (Tùy chọn)'.slice(0, 45))
         .setStyle(TextInputStyle.Short)
         .setValue((current.embed.footer || '').slice(0, 200))
-        .setPlaceholder('VD: Ares Store | discord.gg/aresstore')
+        .setPlaceholder('VD: Server Name | discord.gg/linkserver')
         .setRequired(false);
 
       modal.addComponents(
