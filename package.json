@@ -2,9 +2,9 @@
   "name": "discord-verify-bot",
   "version": "1.0.0",
   "description": "Discord verification bot with question modal and auto/manual review",
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node index.js",
     "deploy-commands": "node src/deploy-commands.js",
     "test": "node test/test-logic.js"
   },
