@@ -51,10 +51,10 @@ console.log('✅ getRawConfig và saveRawConfig hoạt động hoàn hảo!');
 // 5. Kiểm thử cấu trúc lệnh /config-verify
 assert(configVerifyCommand.data.name === 'config-verify', 'Tên lệnh phải là config-verify');
 const subcommands = configVerifyCommand.data.options.map(o => o.name);
-const expectedSubs = ['xem', 'role', 'che-do', 'kenh-duyet', 'dat-cau-hoi', 'xoa-cau-hoi'];
+const expectedSubs = ['xem', 'role', 'che-do', 'kenh-duyet', 'noi-dung', 'dat-cau-hoi', 'xoa-cau-hoi'];
 for (const sub of expectedSubs) {
   assert(subcommands.includes(sub), `Thiếu subcommand ${sub}`);
 }
-console.log('✅ Lệnh Slash /config-verify đầy đủ 6 subcommand quản trị!');
+console.log('✅ Lệnh Slash /config-verify đầy đủ 7 subcommand quản trị!');
 
 console.log('🎉 TẤT CẢ CÁC KIỂM THỬ ĐÃ VƯỢT QUA!');

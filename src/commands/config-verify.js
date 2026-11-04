@@ -5,6 +5,7 @@ const {
   EmbedBuilder
 } = require('discord.js');
 const { getRawConfig, saveRawConfig, loadConfig } = require('../utils/configLoader');
+const { createVerifyMessage } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -58,7 +59,48 @@ module.exports = {
             .setRequired(true)
         )
     )
-    // 5. Thêm/Sửa câu hỏi
+    // 5. Chỉnh sửa nội dung tin nhắn bảng xác minh
+    .addSubcommand(sub =>
+      sub
+        .setName('noi-dung')
+        .setDescription('Chỉnh sửa tiêu đề, mô tả, nút bấm của bảng xác minh')
+        .addStringOption(opt =>
+          opt
+            .setName('tieu-de')
+            .setDescription('Tiêu đề bảng xác minh (Ví dụ: 🛡️ XÁC MINH THÀNH VIÊN)')
+            .setMaxLength(256)
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('mo-ta')
+            .setDescription('Nội dung hướng dẫn xác minh (Dùng \\n để xuống dòng)')
+            .setMaxLength(2000)
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('chu-nut')
+            .setDescription('Chữ hiển thị trên nút bấm (Ví dụ: Bắt đầu xác minh)')
+            .setMaxLength(80)
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('icon-nut')
+            .setDescription('Biểu tượng cảm xúc trên nút (Ví dụ: ✅, 🛡️, ⭐)')
+            .setMaxLength(20)
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('mau-sac')
+            .setDescription('Mã màu Hex cho khung Embed (Ví dụ: #5865F2, #57F287, #ED4245)')
+            .setMaxLength(10)
+            .setRequired(false)
+        )
+    )
+    // 6. Thêm/Sửa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('dat-cau-hoi')
@@ -85,7 +127,7 @@ module.exports = {
             .setRequired(false)
         )
     )
-    // 6. Xóa câu hỏi
+    // 7. Xóa câu hỏi
     .addSubcommand(sub =>
       sub
         .setName('xoa-cau-hoi')
@@ -114,9 +156,11 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const raw = getRawConfig();
 
-    // Đảm bảo các thuộc tính cốt lõi luôn tồn tại
     if (!raw.danh_sach_cau_hoi || !Array.isArray(raw.danh_sach_cau_hoi)) {
       raw.danh_sach_cau_hoi = [];
+    }
+    if (!raw.embed || typeof raw.embed !== 'object') {
+      raw.embed = {};
     }
 
     // --- 1. LỆNH XEM CẤU HÌNH ---
@@ -141,10 +185,14 @@ module.exports = {
         .addFields(
           { name: '🎭 Role sẽ cấp', value: roleDisplay, inline: false },
           { name: '🛡️ Chế độ xác minh', value: modeDisplay, inline: true },
-          { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true }
+          { name: '📋 Kênh Admin duyệt', value: reviewChannelDisplay, inline: true },
+          { 
+            name: '📝 Nội dung bảng xác minh', 
+            value: `**Tiêu đề:** ${normalized.embed.title}\n**Nút bấm:** ${normalized.embed.buttonEmoji} ${normalized.embed.buttonLabel}\n*(Dùng \`/config-verify noi-dung\` để chỉnh sửa)*`, 
+            inline: false 
+          }
         );
 
-      // Hiển thị danh sách câu hỏi
       if (normalized.questions.length === 0) {
         embed.addFields({
           name: '❓ Danh sách câu hỏi',
@@ -172,7 +220,6 @@ module.exports = {
     if (sub === 'role') {
       const selectedRole = interaction.options.getRole('vai-tro');
 
-      // Kiểm tra vị trí role của bot so với role được chọn
       const botMember = interaction.guild.members.me;
       if (botMember.roles.highest.position <= selectedRole.position) {
         return interaction.reply({
@@ -218,13 +265,55 @@ module.exports = {
       });
     }
 
-    // --- 5. LỆNH THÊM / SỬA CÂU HỎI ---
+    // --- 5. LỆNH CHỈNH NỘI DUNG BẢNG VERIFY ---
+    if (sub === 'noi-dung') {
+      const title = interaction.options.getString('tieu-de');
+      const description = interaction.options.getString('mo-ta');
+      const buttonLabel = interaction.options.getString('chu-nut');
+      const buttonEmoji = interaction.options.getString('icon-nut');
+      const color = interaction.options.getString('mau-sac');
+
+      if (!title && !description && !buttonLabel && !buttonEmoji && !color) {
+        return interaction.reply({
+          content: '⚠️ Bạn chưa điền nội dung nào cần thay đổi!\n👉 Hãy chọn ít nhất 1 tùy chọn: `tieu-de`, `mo-ta`, `chu-nut`, `icon-nut`, hoặc `mau-sac`.',
+          ephemeral: true
+        });
+      }
+
+      if (title) raw.embed.title = title;
+      if (description) raw.embed.description = description.replace(/\\n/g, '\n');
+      if (buttonLabel) raw.embed.buttonLabel = buttonLabel;
+      if (buttonEmoji) raw.embed.buttonEmoji = buttonEmoji;
+      if (color) {
+        const hexRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+        if (!hexRegex.test(color)) {
+          return interaction.reply({
+            content: '❌ Mã màu không hợp lệ! Vui lòng dùng định dạng Hex (ví dụ: `#5865F2`, `#57F287`, `#ED4245`).',
+            ephemeral: true
+          });
+        }
+        raw.embed.color = color;
+      }
+
+      saveRawConfig(raw);
+
+      const currentConfig = loadConfig();
+      const { embed: previewEmbed, row: previewRow } = createVerifyMessage(currentConfig);
+
+      return interaction.reply({
+        content: '✅ **Đã cập nhật nội dung bảng xác minh thành công!**\n*(Nếu muốn cập nhật lại bảng xác minh trong kênh chat, Admin chỉ cần gõ lại lệnh `/setup-verify`)*.\n\n👇 **Giao diện xem trước:**',
+        embeds: [previewEmbed],
+        components: [previewRow],
+        ephemeral: true
+      });
+    }
+
+    // --- 6. LỆNH THÊM / SỬA CÂU HỎI ---
     if (sub === 'dat-cau-hoi') {
-      const index = interaction.options.getInteger('so-thu-tu') - 1; // đổi về 0-based index
+      const index = interaction.options.getInteger('so-thu-tu') - 1;
       const questionText = interaction.options.getString('cau-hoi').trim();
       const answerText = (interaction.options.getString('dap-an') || '').trim();
 
-      // Mở rộng mảng nếu cần
       while (raw.danh_sach_cau_hoi.length <= index) {
         raw.danh_sach_cau_hoi.push({ cau_hoi: '', dap_an: '' });
       }
@@ -234,7 +323,6 @@ module.exports = {
         dap_an: answerText
       };
 
-      // Giới hạn tối đa 5 câu hỏi
       raw.danh_sach_cau_hoi = raw.danh_sach_cau_hoi.slice(0, 5);
       saveRawConfig(raw);
 
@@ -246,7 +334,7 @@ module.exports = {
       });
     }
 
-    // --- 6. LỆNH XÓA CÂU HỎI ---
+    // --- 7. LỆNH XÓA CÂU HỎI ---
     if (sub === 'xoa-cau-hoi') {
       const index = interaction.options.getInteger('so-thu-tu') - 1;
 
